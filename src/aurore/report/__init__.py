@@ -1,7 +1,7 @@
-from .utils import get_resource_location
+from ..utils import get_resource_location
 
 
-def report_header(args,config):
+def report_header_std(args,config):
     if "title" in args:
         print(f"""# {args.title}
 ## Build: `win-2020-10-31`
@@ -9,11 +9,11 @@ def report_header(args,config):
 | ID  | Pass  | Notes  |   |
 |---|---|---|---|""")
 
-def report_footer(args,config):
+def report_footer_std(args,config):
     print("## Data sources\n")
     if isinstance(args.datafile,list):
         for file in args.datafile:
-            print(args.)
+            pass
 
 
 

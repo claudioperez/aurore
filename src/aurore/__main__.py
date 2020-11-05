@@ -28,7 +28,6 @@ config.copy = CopyConfig()
 config.copy.destination_gitignore = True
 config.copy.filters: list = []
 
-
 def _append_gitignore(entry,destination_dir):
     gitignore = os.path.join(destination_dir,'.gitignore')
     if os.path.isfile(gitignore):
@@ -51,8 +50,8 @@ def update_src_metadata(rsrc,args,config):
             logger.info(f"Copying {rsrc['id']} data to {destination}")
             mf.write(yaml.dump(rsrc))
     except Exception as e:
-        print(rsrc)
-        print(e)
+        logger.error(rsrc)
+        logger.error(e)
         return
 
     if args.commit and "URL" in rsrc:
@@ -63,6 +62,14 @@ def update_src_metadata(rsrc,args,config):
             os.system(f"git -C {gitdir} commit -am 'Auto-update {args.metafile}'")
             os.system(f"git -C {gitdir} push")
 
+def git_item(rsrc,args,config=None):
+    if "URL" in rsrc and isrepository(rsrc["URL"]):
+        gitdir = get_resource_location(rsrc,config)
+        if args.dry:
+            logger.info(f"git -C {gitdir} {' '.join(args.gitcommands)}")
+        else:
+            os.system(f"git -C {gitdir} {' '.join(args.gitcommands)}")
+    
 def copy_resource(rsrc,args,config):
     source_dir = get_resource_location(rsrc,config)
     destination = os.path.join(args.DIRECTORY,rsrc['id']+'/')
@@ -84,7 +91,6 @@ def copy_resource(rsrc,args,config):
     logger.info(f"Copying {rsrc['id']} data from {source_dir} to {destination}")
     if not args.dry:
         copy_tree(source_dir, destination, destination, rules)
-    
 
     if config.copy.destination_gitignore:
         _append_gitignore(rsrc['id']+'/', args.DIRECTORY)
@@ -96,7 +102,7 @@ def _apply_filter(rsrc:dict,filter:dict)->set:
                 continue
             else:
                 return False
-    return set(filter["rules"])
+    return set(filter["rules"]) if "rules" in filter else True
         
 
 def isrepository(url_string):
@@ -107,43 +113,43 @@ def isrepository(url_string):
     else:
         return False
 
-def clone_resources(rsrc,args,config=None):
+def clone_resources(rsrc,args,config=None)->None:
     if "URL" in rsrc:
         if isrepository(rsrc['URL']):
             destination = get_resource_location(rsrc,config)
             os.system(f"git clone {rsrc['URL']} {destination}")
 
-def generate_git_API(subparser):
-    commands = {
-        "clone": "",
-        "fetch": {}
-    }
-    for command in commands:
-        command_parser = subparser.add_parser(command,help=f"Interface to git {command}")
-        command_parser.add_argument("datafile")
-        def exec_command(rsrc,args):
-            if "URL" in rsrc:
-                if isrepository(rsrc):
-                    destination = get_resource_location(rsrc,config)
-                    os.system(f"git {command} ")
-
 def rename_resource(rsrc,args):
     raise Exception("Unimplemented")
 
-def main():
+def show_resource(rsrc,args,config):
+    if _apply_filter(rsrc, {"match": {"id":args.REGEX}}):
+        print(yaml.dump(rsrc))
+        # if "URL" in rsrc and isrepository(rsrc["URL"]):
+        #     args.gitcommands = ["status"]
+        #     args.dry = False
+        #     git_item(rsrc,args,config)
+
+def main()->int:
     parser = argparse.ArgumentParser(prog='aurore')
     parser.add_argument("-v","--verbose", action="count", default=0)
     parser.add_argument("-q","--quiet", action="store_true")
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
 
-    subparsers = parser.add_subparsers(title='subcommands',description='list of subcommands',help='additional help')
+    subparsers = parser.add_subparsers(title='subcommands') #,description='list of subcommands',help='additional help')
     
     #-Clone-----------------------------------------------------------
     clone_parser = subparsers.add_parser('clone',help='clone repositories')
     clone_parser.add_argument('datafile')
     clone_parser.set_defaults(func=clone_resources)
     
-    
+    #-Git-------------------------------------------------------------
+    git_parser = subparsers.add_parser("git", help="interface to git")
+    git_parser.add_argument("datafile")
+    git_parser.add_argument("gitcommands",nargs=argparse.REMAINDER)
+    git_parser.add_argument("--dry",action="store_true")
+    git_parser.set_defaults(func=git_item)
+
     #-Update----------------------------------------------------------
     update_parser= subparsers.add_parser('update',
                         help='update resource metadata files.')
@@ -169,11 +175,19 @@ def main():
     copy_parser.add_argument("--clean",action="store_true")
     copy_parser.add_argument("--dry", action="store_true")
     copy_parser.add_argument("-F","--filter")
+    copy_parser.add_argument("-R","--rule")
     copy_parser.set_defaults(func=copy_resource)
 
+    #-Show------------------------------------------------------------
+    show_parser = subparsers.add_parser("show",help="show resources with id matching REGEX")
+    show_parser.add_argument("datafile")
+    show_parser.add_argument("REGEX")
+    show_parser.set_defaults(func=show_resource)
+
     #-Rename----------------------------------------------------------
-    rename_parser = subparsers.add_parser('rename',
-                            help='rename resource files to directory [destination_dir]')
+    rename_parser = subparsers.add_parser(
+                        'rename',
+                        help='rename resource files to destination_dir')
     rename_parser.add_argument("datafile")
     rename_parser.add_argument("destination_dir")
     rename_parser.add_argument("--clean",action="store_true")
@@ -214,6 +228,8 @@ def main():
     
     if "closefunc" in args:
         args.closefunc(accum,args,config)
+    
+    return 0
 
-if __name__ == "__main__":
-    main()
+
+if __name__ == "__main__": main()

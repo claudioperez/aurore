@@ -1,8 +1,8 @@
 from typing import Callable
 from argparse import Namespace
 
-from anabel import interface 
-
+# from anabel import interface 
+interface = lambda x: x
 
 class Config: pass
 

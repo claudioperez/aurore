@@ -7,21 +7,26 @@ import coloredlogs
 
 from .sed import sed
 
-# logger = logging.getLogger(__name__)
-logger = logging.getLogger()
-# coloredlogs.install()
+logger = logging.getLogger(__name__)
+# logger = logging.getLogger()
+coloredlogs.install()
 
 class Error(OSError):
     pass
 
 def get_resource_location(rsrc,config):
+    if "archive_location" in rsrc and "archive" in rsrc:
+        pass
+    else:
+        logger.error(f"{rsrc['id']}: insufficient archive info")
+        return
     try:
         if rsrc["archive"] in config.environ:
             projdir = config.environ[rsrc["archive"]]
         else:
             projdir = os.environ.get(rsrc['archive'].replace('$',''))
     except Exception as e:
-        logger.warn(f"Error [{rsrc['id']}]: {e}")
+        logger.error(f"[{rsrc['id']}]: {e}")
         return
     
     return os.path.join(projdir,rsrc['archive_location'])
