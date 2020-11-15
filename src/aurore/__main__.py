@@ -10,7 +10,7 @@ import yaml, coloredlogs
 from oaks.lists import list_merge, test_item_by_key
 
 from .core import Config, InitOperation, ItemOperation
-from .report import item_test_report, report_header_std, report_footer_std
+from .report import init_report
 from .utils import copy_tree, get_resource_location
 
 logger = logging.getLogger(__name__)
@@ -24,6 +24,8 @@ config = Config()
 config.environ = {
     "$FEDEASLAB_DEV": "/mnt/c/Users/claud/git/fcf"
 }
+config.filters: list = []
+
 config.copy = CopyConfig()
 config.copy.destination_gitignore = True
 config.copy.filters: list = []
@@ -42,7 +44,7 @@ def _append_gitignore(entry,destination_dir):
         with open(gitignore,'w+') as f:
             f.write(entry+'\n')
 
-def update_src_metadata(rsrc,args,config):
+def update_src_metadata(rsrc, args, config, accum=None):
     destination_dir = get_resource_location(rsrc,config)
     try:
         destination = os.path.join(destination_dir,args.metafile)
@@ -70,7 +72,7 @@ def git_item(rsrc,args,config=None):
         else:
             os.system(f"git -C {gitdir} {' '.join(args.gitcommands)}")
     
-def copy_resource(rsrc,args,config):
+def copy_resource(rsrc,args,config, accum):
     source_dir = get_resource_location(rsrc,config)
     destination = os.path.join(args.DIRECTORY,rsrc['id']+'/')
     if args.clean and os.path.isdir(destination):
@@ -113,16 +115,17 @@ def isrepository(url_string):
     else:
         return False
 
-def clone_resources(rsrc,args,config=None)->None:
+def clone_resources(rsrc,args,config=None,accum=None)->None:
     if "URL" in rsrc:
         if isrepository(rsrc['URL']):
             destination = get_resource_location(rsrc,config)
             os.system(f"git clone {rsrc['URL']} {destination}")
 
-def rename_resource(rsrc,args):
+def rename_resource(rsrc, args, accum):
     raise Exception("Unimplemented")
 
-def show_resource(rsrc,args,config):
+
+def show_resource(rsrc, args, config, accum):
     if _apply_filter(rsrc, {"match": {"id":args.REGEX}}):
         print(yaml.dump(rsrc))
         # if "URL" in rsrc and isrepository(rsrc["URL"]):
@@ -132,6 +135,8 @@ def show_resource(rsrc,args,config):
 
 def main()->int:
     parser = argparse.ArgumentParser(prog='aurore')
+    parser.add_argument("-D","--datafile", nargs="+", action="extend")
+    parser.add_argument("-F","--filter")
     parser.add_argument("-v","--verbose", action="count", default=0)
     parser.add_argument("-q","--quiet", action="store_true")
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
@@ -161,20 +166,21 @@ def main()->int:
     #-Report----------------------------------------------------------
     report_parser= subparsers.add_parser('report',
                         help='report resource metadata files.')
-    report_parser.add_argument('datafile',nargs="*")
+    report_parser.add_argument('template')
+    # report_parser.add_argument("-D","--datafile", nargs="+", action="extend")
     report_parser.add_argument('--title')
-    report_parser.add_argument('-T','--template',action='store_true')
-    report_parser.set_defaults(func=item_test_report)
-    report_parser.set_defaults(initfunc=report_header_std)
+    report_parser.add_argument('-d','--template_data')
+    report_parser.set_defaults(init=init_report)
+    # report_parser.set_defaults(initfunc=report_header_std)
 
     #-Copy------------------------------------------------------------
     copy_parser = subparsers.add_parser('copy',
                             help='copy resource files to DIRECTORY')
-    copy_parser.add_argument("datafile")
+    # copy_parser.add_argument("datafile")
     copy_parser.add_argument("DIRECTORY")
     copy_parser.add_argument("--clean",action="store_true")
     copy_parser.add_argument("--dry", action="store_true")
-    copy_parser.add_argument("-F","--filter")
+    # copy_parser.add_argument("-F","--filter")
     copy_parser.add_argument("-R","--rule")
     copy_parser.set_defaults(func=copy_resource)
 
@@ -205,10 +211,10 @@ def main()->int:
     if isinstance(args.datafile,list):
         db = {"references": []}
         for file in args.datafile:
+            logger.debug(f"...{file}")
             with open(file,"r") as f:
                 newdata = yaml.load(f,Loader=yaml.Loader)
             db["references"] = list_merge(newdata["references"], db["references"], test_item_by_key("id"))
-        # print("data: {}".format(db["references"]))
     else:
         with open(args.datafile,"r") as f:
             db = yaml.load(f,Loader=yaml.Loader)
@@ -216,18 +222,24 @@ def main()->int:
     if "filter" in args:
         with open(args.filter,"r") as f:
             config.copy.filters.extend(yaml.load(f,Loader=yaml.Loader)["filters"])
-    
+        config.filters.extend(config.copy.filters[-1])
+
+    if "init" in args:
+        args.initfunc, args.func, args.closefunc = args.init(args,config)
+
     #-------------------------------------------------------------------
     if "initfunc" in args:
-        args.initfunc(args,config)
+        accum = args.initfunc(args,config)
+    else:
+        accum = {}
     
-    accum = []
+
     for resource in db['references']:
         logger.info("Entering {}".format(resource["id"]))
-        accum.append(args.func(resource,args,config))
+        accum = args.func(resource, args, config, accum)
     
     if "closefunc" in args:
-        args.closefunc(accum,args,config)
+        args.closefunc(args, config, accum)
     
     return 0
 
