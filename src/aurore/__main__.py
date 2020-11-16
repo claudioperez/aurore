@@ -158,7 +158,6 @@ def main()->int:
     #-Update----------------------------------------------------------
     update_parser= subparsers.add_parser('update',
                         help='update resource metadata files.')
-    update_parser.add_argument('datafile')
     update_parser.add_argument('metafile')
     update_parser.add_argument('-c','--commit',action='store_true')
     update_parser.set_defaults(func=update_src_metadata)

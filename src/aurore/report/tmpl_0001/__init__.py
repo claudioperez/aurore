@@ -41,9 +41,10 @@ def close(args, config, accum):
 def get_children(rsrc:dict, config, data_fields:dict)->dict:
     path = get_resource_location(rsrc, config) + "/index"
     data = {
+        "id": rsrc["id"],
         "title": rsrc["title"],
         "synopsis": rsrc["abstract"],
-        "url": rsrc["id"] + "/",
+        "url": rsrc["id"] + "/README.html",
         "image": elstir_filters._get_dir_image(path),
         "template_data": elstir_filters.getParentTemplateFields(path,data_fields)
     }

@@ -2,10 +2,10 @@
 <div class="card shadow-sm my-3 {% for f in card.template_data.values() %} {{ f.replace(' ','-') if f else '' }}{% endfor %} gallery-item" {% if card.template_data %}data-gallery_info='{{ card.template_data|tojson }}'{% endif %}>
   <div class="row no-gutters">
     <div class="card-header">
-        <p><code>{{ card.template_data.id if card.template_data.id else "" }}</code></p>
+        <p><code>{{ card.id if card.id else "" }}</code></p>
       {% if card.template_data.URL %}
         <p><a href="{{ card.template_data.URL }}">
-          <code><img border="1" src="/img/git-logo-2-color.png" width="35px"></code>
+          <!-- <code><img border="1" src="/img/git-logo-2-color.png" width="35px"></code> -->
         </a></p>
       {% endif %}
     </div>
