@@ -25,12 +25,11 @@ setup(
     description="Utilities",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    #url="https://github.com/pypa/sampleproject",
-    py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
+    url="https://github.com/claudioperez/aurore",
+    py_modules=[splitext(basename(path))[0] for path in glob("src/*.py")],
     include_package_data=True,
     packages=find_packages('src'),
     package_dir={'': 'src'},
-    # install_requires = ['ruamel.yaml'],
     entry_points={
         'console_scripts': [
             'aurore = aurore.__main__:main',
@@ -40,4 +39,8 @@ setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
+    install_requires=[
+        "coloredlogs",
+        "pyyaml"
+    ]
 )
