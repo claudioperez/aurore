@@ -15,6 +15,7 @@ aurore copy qfem-xxxx.yaml . --filter aurore.filter.yaml --clean
 ```
 
 ### Report
+
 ```shell
 $ aurore -q report qfem-xxxx.yaml status.yaml --title="quoFEM"> README.md
 ```
