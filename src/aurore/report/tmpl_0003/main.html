@@ -1,0 +1,11 @@
+{% from "single_item.html" import single_item with context %}
+
+
+<hr>
+
+<div class="gallery" id="gallery">
+{%- for item in items %}
+{{ single_item(item) }}
+{%- endfor %}
+</div>
+
