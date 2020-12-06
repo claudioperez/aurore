@@ -1,0 +1,27 @@
+<item>
+  <input key="$title" />
+  <input key="$description" />
+  <input key="$contrib-name" />
+  <input key="$contrib-email" />
+  
+  <id>http://http://github.com/claudioperez/text/tree/master/$$lid/entity.xml</id>
+  <title>$title/</title>
+  <link rel="via"
+    title="source"
+    type="text/html"
+    href="http://http://github.com/claudioperez/text/$$lid/" />
+  <link rel="alternate"
+    title="read"
+    type="text/html"
+    href="http://cmp.claudioperez.xyz/meetings/$$lid/" />
+
+  <summary>$description</summary>
+   <contributor>
+    <name>$contrib-name</name>
+    <email>$contrib-email</email>
+  </contributor> <published>$$published</published>
+  <contributor>
+    <name>Claudio M. Perez II</name>
+    <email>claudio_perez@berkeley.edu</email>
+  </contributor>
+</item>

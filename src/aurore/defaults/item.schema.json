@@ -1,0 +1,23 @@
+[
+    {
+        "name": "assm",
+        "description": "assembly item",
+        "type": "object",
+
+        "properties": {
+            "date": {"type": "string"},
+            "contributors": {"type": "array"}
+        }
+    },
+    {
+        "name": "note",
+        "description": "note item",
+        "type": "object",
+
+        "properties": {
+            "date": {"type": "string"}
+        }
+
+    }
+]
+

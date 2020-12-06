@@ -10,10 +10,7 @@ feeds:
 - name: qfem
   id: https://github.com/NHERI-SimCenter/quoFEM/examples/qfem.atom
   recipe: https://github.com/NHERI-SimCenter/quoFEM/examples/index.yaml
-contributors:
-  - name: frank
-    email: ~
-  - name: adam
+
 
 feed config:
   # hosted file; pulled by aurore and used to aggregate rss data

@@ -1,17 +1,18 @@
-A Git-based CMS for parsing and emitting Atom feeds.
+A Git-based CMS for parsing and emitting ATOM feeds.
 
 ## Aurore elements
 
 tags:
 - `link via`: link to source location of feed data, i.e., the source code
 - `link self`: link to raw feed file
+- `link repo`: link to repository
 - `link alternate`: link to documentation
 - `link enclosure`: link to download/install
-- `
+- 
 
 - `aurore:repo-url`: url of master repository
 - `aurore:repo-loc`: local path relative to repository,
-- 
+
 <!-- - `aurore:exec-src`: executable source code uri --> USE link.rel="via"
 - `aurore:exec-cli`: executable command-line interface
 <!-- - `aurore:exec-dir`: executable directory -->

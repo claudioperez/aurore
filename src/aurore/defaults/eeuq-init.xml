@@ -1,0 +1,28 @@
+  <id>http://raw.githubusercontent.com/NHERI-SimCenter/EE-UQ/master/examples/{ rsrc["lid"] }/entity.xml</id>
+  <title>{ rsrc['title'] }</title>
+
+  <link rel="via"
+    title="contribute"
+    type="text/html"
+    href="http://http://github.com/NHERI-SimCenter/EE-UQ
+          /tree/master/examples/{ rsrc["lid"] }" />
+  <link rel="alternate"
+    title="documentation"
+    type="text/html"
+    href="http://NHERI-SimCenter.github.io/EE-UQ-Documentation/
+          common/user_manual/examples/desktop/EE-UQ/{ rsrc['lid'] }/" />
+  <link rel="enclosure"
+    title="download"
+    type="application/zip"
+    href="http://github.com/NHERI-SimCenter/EE-UQ
+          /tree/master/examples/{rsrc["lid"]}/{ rsrc["lid"] }.zip" />
+  <link rel="repo"
+    title="repo"
+    type="application/x+git"
+    href="http://github.com/NHERI-SimCenter/EE-UQ.git"
+    loc="examples/{rsrc["lid"]}/{rsrc["lid"]}.zip" />
+  <summary>
+    { rsrc["description"] }
+  </summary>
+  <logo src=""/>
+  <published>{ now }</published>

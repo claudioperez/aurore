@@ -4,6 +4,7 @@ import logging
 from typing import List, Set
 import coloredlogs
 
+import yaml
 
 from .sed import sed
 
@@ -13,6 +14,24 @@ coloredlogs.install()
 
 class Error(OSError):
     pass
+
+# def load_namespace(namespace:str)->dict:
+#     pointer = namespace.split("#")
+#     with open(pointer[0],"r") as f:
+#         data = yaml.load(f, Loader=yaml.Loader)
+    
+#     if len(pointer) > 1:
+#         return data[pointer[1]]
+#     else: return data
+
+
+def isrepository(url_string):
+    url_object = urllib.parse.urlparse(url_string)
+    url_path = Path(url_object.path)
+    if len(url_path.parts)==3:
+        return True
+    else:
+        return False
 
 def get_resource_location(rsrc,config):
     if "archive_location" in rsrc and "archive" in rsrc:
