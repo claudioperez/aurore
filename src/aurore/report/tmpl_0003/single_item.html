@@ -1,30 +1,21 @@
 {% macro single_item(item) %}
 <div class="card shadow-sm my-3 gallery-item" >
-  <div class="row no-gutters">
-    <div class="card-header">
-        <p><code>{{ item.attrib['id'].text }}</code></p>
-      {# if card.template_data.URL #}
-        <p><a href="{# card.template_data.URL #}">
-          <!-- <code><img border="1" src="/img/git-logo-2-color.png" width="35px"></code> -->
-        </a></p>
-      {# endif #}
-    </div>
-    <div class="col-md-{# '5' if item.image else '7' #}">
-      <div class="card-body">
-        <a href="{# item.url #}" class="stretched-link">
-          <h5 class="card-title">{{ item.find("title").text }}</h5>
-        </a>
+    <details>
+    <summary class="card-header"><code>{{ item.attrib['id'] }}</code>
+        <h5 class="card-title mb-0">
+          {{ item.find("title").text }}
+        </h5>
         <p class="card-text">
           {{ item.find("summary").text }}
-
-          <pre>{{ item.find("exe").find("cli").text }}</pre>
         </p>
+      </summary>
+
+      <div class="collapse show" data-parent="gallery" id="collapse-{{ item.attrib['id'] }}">
+        <div class="card-body">
+          <pre>{{ item.find("exe").find("cli").text }}</pre>
+        </div>
       </div>
-    </div>
-    <div class="col-md-4 ml-auto mr-2 my-1">
-      {# <img src="_static/img/{{ item.attrib['id'] }}.png" class="card-image" style="max-width:275px;max-height:220px;width:auto;height:auto;"> #}
-    </div>
-  </div>
+  </details>
 </div>
 {% endmacro %}
 

@@ -18,7 +18,7 @@ def init(args, config)-> dict:
 item = get_item
 
 def close(args, config, accum):
-    print(accum["items"])
+    # print(accum["items"])
     env = jinja2.Environment(
             loader=jinja2.PackageLoader("aurore","report/tmpl_0003")
         )
