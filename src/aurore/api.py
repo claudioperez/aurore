@@ -1,9 +1,21 @@
 import os
+import json
+import logging
 import subprocess
 import xml.etree.ElementTree as ElementTree
 import xml.dom.minidom as minidom
-
 from datetime import datetime, timezone
+
+from .proc_xml import xml_to_map, proc_var, proc_elem
+
+logger = logging.getLogger("aurore.api")
+
+class SetEncoder(json.JSONEncoder):
+    def default(self, obj):
+       if isinstance(obj, set):
+          return list(obj)
+       return json.JSONEncoder.default(self, obj)
+
 
 def feed_init(args, config)->dict:
     pass
@@ -11,7 +23,6 @@ def feed_init(args, config)->dict:
 #--------------------------------------------
 # Post
 #--------------------------------------------
-
 def post_init(args, config)->dict:
     if "type" in args: args.base = args.type.split("/")[0]
     print(args.base)
@@ -62,46 +73,51 @@ def build_template(template:list, data:dict):
 # Get
 #--------------------------------------------
 def get_init(args,config):
-    return {"items": []}
+
+    accum = {"items": {}, "categories": {}}
+    accum["categories"] = {
+        scheme.attrib["key"]: {
+            "map": xml_to_map(scheme.find("map")),
+            "var": scheme.find("var")
+        } for scheme in args.category_schemes
+    }
+    return accum
 
 def get_item(rsrc, args:object, config:object, accum:dict)->dict:
-    # print(rsrc)
-    for el in rsrc.iter():
-        if el.tag=="exe":
-            proc_exe(el,args)
-            # print(el.find("cli").text)
-        elif el.tag=="":
-            pass
-    accum['items'].append(rsrc)
+    raw_item = xml_to_map(rsrc, args.base_uri)
+    if "base" in rsrc.attrib:
+        base = rsrc.attrib["base"]
+    else:
+        base = args.base_uri
+    item = categorize(accum["categories"], raw_item, base)
+    accum['items'].update({rsrc.attrib["id"]: item})
     return accum
 
 def get_close(args, config, accum):
-    for item in accum["items"]:
-        # pass
-        print(
-            minidom.parseString(ElementTree.tostring(item)).toprettyxml(indent="  ")
+    output = {
+        "items":  accum["items"]
+    }
+    if accum["categories"]:
+        output.update({
+            "categories": {
+                category: accum["categories"][category]["map"] for category in accum["categories"]
+            }
+        })
+
+    print(json.dumps(output,indent=2,cls=SetEncoder))
+
+
+def categorize(categories, map_item, base_uri):
+    map_item["categories"] = {}
+
+    for category in categories:
+        logger.info(f"Category base uri: {base_uri}")
+        val = proc_elem(categories[category]["var"], base_uri, {"item": map_item})[0]
+        if val is None: val="None"
+        logger.info(f"Category value: {val}")
+        assert val in categories[category]["map"], f"Key {val} not in mapping {categories[category]['map']}"
+        map_item["categories"].update(
+            {category: val}
             )
 
-def proc_exe(rsrc,args):
-    cli = rsrc.find("cli")
-    build_loc = os.path.join(args.base_uri,rsrc.attrib["build-loc"])
-    if "src" in cli.keys():
-        if build_loc[-3:] == ".py":
-            try:
-                cli.text = subprocess.check_output([
-                    "python", os.path.expandvars(build_loc), "--help"
-                ]).decode().replace("<","&lt")
-            except:
-                pass
-        else:
-            try:
-                cli.text = subprocess.check_output([
-                    os.path.expandvars(build_loc)
-                ]).decode().replace("<","&lt")
-            except:
-                try:
-                    cli.text = subprocess.check_output([
-                        os.path.expandvars(build_loc), "--help"
-                    ]).decode().replace("<","&lt")
-                except: 
-                    pass
+    return map_item

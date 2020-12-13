@@ -1,4 +1,0 @@
-{% macro single_item(item) %}
-{{ item.attrib['id'] }}, {{ item.find("title").text }}
-{%- for f in attrib_fields %}, {{ item.find(f.split(":")[0]).attrib[f.split(":")[1]] }}{% endfor -%}
-{% endmacro %}
