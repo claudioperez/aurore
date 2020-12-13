@@ -28,7 +28,7 @@ try:
 except:
     pass
 
-
+__version__ = "0.0.1"
 
 def pass_item(item, args, config, accum:dict)->dict:
     return accum
@@ -66,9 +66,20 @@ def main()->int:
     # parser.add_argument("-I","--include-item", nargs="?", action="append")
     # parser.add_argument("-E","--exclude",nargs="*", action="extend")
     parser.add_argument("-B","--base-uri", default="")
-    parser.add_argument("-d","--defaults", nargs="?", action="append")
-    parser.add_argument("-v","--verbose", action="count", default=0)
+    parser.add_argument("-d","--defaults",
+        help="Specify a default yaml file.",
+        nargs="?",
+        action="append"
+    )
+    parser.add_argument("-v","--verbose",
+        help="Generate verbose logging output.",
+        action="count", 
+        default=0
+    )
     parser.add_argument("-q","--quiet", action="store_true")
+    parser.add_argument("--version",
+        help="Output version information and exit.",
+        action="store_true")
 
     subparsers = parser.add_subparsers(title='subcommands') #,description='list of subcommands',help='additional help')
     
@@ -95,6 +106,10 @@ def main()->int:
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=levels[args.verbose])
     if args.quiet: logger.setLevel(levels[0])
+
+    if args.version:
+        print(__version__)
+        exit(0)
 
     #-Config----------------------------------------------------------
     cfg = config.load_config()
