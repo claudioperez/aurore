@@ -41,6 +41,7 @@ setup(
     ],
     install_requires=[
         "coloredlogs",
-        "pyyaml"
+        "pyyaml",
+        "rendre"
     ]
 )
