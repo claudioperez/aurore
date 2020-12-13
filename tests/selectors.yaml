@@ -1,0 +1,14 @@
+tests:
+  - item:
+      title: "Item Title"
+      categories:
+        workflow-module: performUQ
+        event-type: None
+    cases:
+      "%c:performUQ": true
+      "%c=performUQ": false
+      "%c/workflow-module=performUQ": true
+      
+      "%c:perform*": true
+      "%c=perform*": false
+      "%c/workflow-module=pe*mUQ": true
