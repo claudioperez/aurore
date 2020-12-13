@@ -1,5 +1,12 @@
 A Git-based CMS for parsing and emitting ATOM feeds.
 
+## Options
+
+<dl>
+  <dt>-v, --verbose</dt>
+  <dd>Generate verbose output.</dd>
+</dl>
+
 ## Aurore elements
 
 tags:
