@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ElementTree
 from .git_utils import sha1
 from .uri_utils import resolve_uri
 from .proc_rst import find_dependencies
-
+from .utils import norm_join
 
 logger = logging.getLogger("aurore.proc_xml")
 
@@ -116,7 +116,8 @@ def proc_list(elem, base, context=None):
 
 
 def cli_usage(src,base_uri):
-    build_loc = os.path.join(base_uri,src)
+    # build_loc = os.path.join(base_uri,src)
+    build_loc = norm_join(base_uri, src)
     state = {"sha1": sha1(src)}
     if build_loc[-3:] == ".py":
         try:
