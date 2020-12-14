@@ -1,0 +1,3 @@
+[submodule "src/aurore/utils/treeutils"]
+	path = src/aurore/utils/treeutils
+	url = https://github.com/claudioperez/treeutils
