@@ -33,6 +33,7 @@ class Pointer:
         "c": lambda i,_: i["categories"],
         "t": lambda i,_: i["title"],
         "i": lambda i,_: i["id"],
+        ".": lambda i,_: i,
     }
 
     def __init__(self, pointer:str,recurse=False):
