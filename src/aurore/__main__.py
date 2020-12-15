@@ -15,18 +15,11 @@ import yaml
 from .api import \
     post_init, post_close, \
     get_init, get_item, get_close
-# from .core import InitOperation, ItemOperation
-# from .report import init_report
+
 from .uri_utils import resolve_uri
+from .utils import norm_join
 from aurore import config
 
-logger = logging.getLogger(__name__)
-
-try:
-    import coloredlogs
-    coloredlogs.install()
-except:
-    pass
 
 __version__ = "0.0.1"
 
@@ -103,9 +96,25 @@ def main()->int:
     # Main
     #-----------------------------------------------------------------
     args = parser.parse_args()
+    
+    #-Logging-----------------------------------------------------------
+    logger = logging.getLogger("aurore")
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level=levels[args.verbose])
-    if args.quiet: logger.setLevel(levels[0])
+    levelNames = ["ERROR", "WARN", "INFO", "DEBUG"]
+    logger.setLevel(levels[
+        0 if args.quiet else min(args.verbose,3) if args.verbose else 0
+        ])
+    try:
+        import coloredlogs
+        coloredlogs.install(level=levelNames[
+            0 if args.quiet else min(args.verbose,3) if args.verbose else 0
+            ])
+    except:
+        pass
+
+    # levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    # logging.basicConfig(level=levels[args.verbose])
+    # if args.quiet: logger.setLevel(levels[0])
 
     if args.version:
         print(__version__)
@@ -133,7 +142,7 @@ def main()->int:
     if not args.base_uri and "base" in items.attrib:
         args.base_uri = root.find("items").attrib["base"]
     
-    if args.category_file:
+    if "category_file" in args and args.category_file:
         categories = ElementTree.parse(args.category_file[0])
         category_schemes.append(categories.findall("category-scheme"))
 
@@ -141,18 +150,18 @@ def main()->int:
     logger.info(f"category schemes: {category_schemes}")
 
     FILTERS = {}
-    if args.exclude:
-        for fltr in args.exclude:
-            if ":" in fltr:
-                field, pattern = fltr.rsplit(":",1)
-            else:
-                pattern = fltr 
-                field = "item:id"
+    # if args.exclude:
+    #     for fltr in args.exclude:
+    #         if ":" in fltr:
+    #             field, pattern = fltr.rsplit(":",1)
+    #         else:
+    #             pattern = fltr 
+    #             field = "item:id"
 
-            if field in FILTERS:
-                FILTERS[field].extend(re.compile(pattern))
-            else:
-                FILTERS.update({field: [re.compile(pattern)]})
+    #         if field in FILTERS:
+    #             FILTERS[field].extend(re.compile(pattern))
+    #         else:
+    #             FILTERS.update({field: [re.compile(pattern)]})
     logger.info(f"filters: {FILTERS}")
 
     #-------------------------------------------------------------------
@@ -164,7 +173,7 @@ def main()->int:
     if args.func:
         for item in items:
             if "src" in item.attrib:
-                resource_path = os.path.join(args.base_uri, item.attrib["src"])
+                resource_path = norm_join(args.base_uri, item.attrib["src"])
                 logger.info(f"Resource path: {resource_path}")
                 resource = resolve_uri(resource_path)
             else:
