@@ -3,17 +3,19 @@ import fnmatch
 import logging
 import jsonpointer
 
+from aurore.utils.treeutils import iterate_leaves
+
 logger = logging.getLogger("aurore.selectors")
 
-def iterate_leaves(item):
-    if isinstance(item,(str,float,int)):
-        yield item
-    elif isinstance(item,dict):
-        for leaf in item.values():
-            yield from iterate_leaves(leaf)
-    elif isinstance(item,(tuple,list)):
-        for leaf in item:
-            yield from iterate_leaves(leaf)
+# def iterate_leaves(item):
+#     if isinstance(item,(str,float,int)):
+#         yield item
+#     elif isinstance(item,dict):
+#         for leaf in item.values():
+#             yield from iterate_leaves(leaf)
+#     elif isinstance(item,(tuple,list)):
+#         for leaf in item:
+#             yield from iterate_leaves(leaf)
 
 
 class Pattern:
@@ -36,12 +38,29 @@ class Pointer:
         ".": lambda i,_: i,
     }
 
-    def __init__(self, pointer:str,recurse=False):
-        self.recurse = recurse
+    def __init__(self, pointer:str,recurse=False,maxlen:int=30,truncate:bool=False,bracket_as_slice=False):
+        self.recurse:  bool = recurse
+        self.truncate: bool = truncate
+        self.slice:   slice = slice(maxlen)
+        if bracket_as_slice:
+            match = re.search(r"\[(.*)\]$",pointer)
+            if match:
+                slice_str = match.group(1)
+                self.slice = slice(*[
+                    {True: lambda n: None, False: int}[x == ''](x) 
+                        for x in (slice_str.split(':') + ['', '', ''])[:3]
+                ])
+                pointer = pointer.rsplit("[",1)[0]
+                logger.debug(f"slice_str: {slice_str}")
+                logger.debug(f"slice: {self.slice}")
+
         if pointer[0] == "%":
             self.tokens = re.split("([%|/][^/]*)", pointer)[1::2]
         else:
-            raise Exception("Unimplemented pattern handler.")
+            raise Exception(
+                f"Unimplemented pattern handler for pointer: "
+                f"{pointer}"
+                )
     
     def resolve_tokens(self,item):
         for token in self.tokens:
@@ -53,13 +72,20 @@ class Pointer:
 
     def resolve(self,item):
         base = self.resolve_tokens(item)
-        return base
+        return base[self.slice] \
+            if self.truncate and isinstance(base,str) \
+            else base
 
     def resolve_recursively(self,item):
         base = self.resolve_tokens(item)
         for i in iterate_leaves(base):
             yield i
 
+class TrueSelector:
+    def __init__(self, *args, **kwds):
+        pass 
+    def validate(self, item)->bool:
+        return True
 
 class Selector:
     def __init__(self,selector:str):
@@ -72,7 +98,7 @@ class Selector:
             pointer, pattern = selector.split("=")
         else:
             recurse = False
-            pointer, pattern = "/id", selector
+            pointer, pattern = r"%i", selector
 
 
         self.pattern = Pattern(pattern)
@@ -91,9 +117,16 @@ class Selector:
 
 def check_includes(args, item):
     logger.debug(args.include_item)
-    if "include_item" in args and args.include_item:
-        selectors = [Selector(i) for i in args.include_item]
-        return any(selector.validate(item) for selector in selectors)
+    if args.include_item:
+        inclusive_selectors = [Selector(i) for i in args.include_item]
     else:
-        return True
+        inclusive_selectors = [TrueSelector()]
+    if args.include_exclusive:
+        exclusive_selectors = [Selector(i) for i in args.include_exclusive]
+    else:
+        exclusive_selectors = [TrueSelector()]
+
+    return any(selector.validate(item) for selector in inclusive_selectors) \
+           and \
+           all(selector.validate(item) for selector in exclusive_selectors)
 
