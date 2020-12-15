@@ -7,6 +7,8 @@ import xml.etree.ElementTree as ElementTree
 import yaml
 
 import aurore.jsonpointer
+from aurore.utils import norm_join
+
 # from aurore.fpointer import resolve_fpointer
 from . import proc_rst
 
@@ -20,9 +22,10 @@ def extract_uri(
 
 
 def resolve_uri(ref:str, local_base=None)->ElementTree:
-    if local_base:
-        ref = os.path.join(local_base, ref)
-    ref = os.path.expandvars(ref)
+    ref = norm_join(local_base, ref)
+    # if local_base:
+    #     ref = os.path.join(local_base, ref)
+    # ref = os.path.expandvars(ref)
     url = urlparse(ref)
 
     if os.path.isfile(url.path):
