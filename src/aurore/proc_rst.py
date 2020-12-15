@@ -2,6 +2,7 @@ import os
 import re
 from docutils.core import publish_doctree
 import xml.etree.ElementTree as ElementTree
+from .utils import norm_join
 
 
 def rst_to_xml(filename):
@@ -12,18 +13,22 @@ def rst_to_xml(filename):
 def find_dependencies(src: str, base:str)->list:
     rst_tree = rst_to_xml(
         os.path.expandvars(
-            os.path.join(base,src)
+            # os.path.join(base,src)
+            norm_join(base,src)
         )
     )
     dependencies = []
-    literal_includes = [
+    lit_includes = [
         i.text for i in rst_tree.findall(".//literal_block")
             if i.text and "literalinclude" in i.text
     ]
     paths = [
-        i.split("\n")[0].split("literalinclude:: ")[1] for i in literal_includes
+        i.split("\n")[0].split("literalinclude:: ")[1] for i in lit_includes
     ]
     dependencies.extend(paths)
+    dependencies.extend([
+        image.attrib["uri"] for image in rst_tree.findall(".//image")
+        ])
 
     return dependencies, None
 
