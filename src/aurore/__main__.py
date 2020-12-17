@@ -1,101 +1,30 @@
 #!/usr/bin/env python
 
 
-import os, re, argparse, distutils, shutil, logging
+import os
+import re
+import argparse
+import distutils, shutil, logging
 from distutils import dir_util
+import xml.etree.ElementTree as ElementTree
 import urllib.parse
 from pathlib import Path
 
-import yaml, coloredlogs
-from oaks.lists import list_merge, test_item_by_key
+import yaml
 
-from .core import Config, InitOperation, ItemOperation
-from .report import init_report
-from .utils import copy_tree, get_resource_location
+from .api import \
+    post_init, post_close, \
+    get_init, get_item, get_close
 
-logger = logging.getLogger(__name__)
-coloredlogs.install()
-# coloredlogs.install(level="DEBUG",logger=logger)
+from .uri_utils import resolve_uri
+from .utils import norm_join
+from aurore import config
 
 
-class CopyConfig(Config): pass
+__version__ = "0.0.1"
 
-config = Config()
-config.environ = {
-    "$FEDEASLAB_DEV": "/mnt/c/Users/claud/git/fcf"
-}
-config.filters: list = []
-
-config.copy = CopyConfig()
-config.copy.destination_gitignore = True
-config.copy.filters: list = []
-
-def _append_gitignore(entry,destination_dir):
-    gitignore = os.path.join(destination_dir,'.gitignore')
-    if os.path.isfile(gitignore):
-        with open(gitignore,'r') as f:
-            items = set(f.readlines())
-        logger.debug(f"adding \"{entry}\" to .gitignore")
-        items.add(entry+'\n')
-        with open(gitignore,'w+') as f:
-            f.writelines(items)
-    else:
-        print(f"Creating .gitignore with entry {entry}")
-        with open(gitignore,'w+') as f:
-            f.write(entry+'\n')
-
-def update_src_metadata(rsrc, args, config, accum=None):
-    destination_dir = get_resource_location(rsrc,config)
-    try:
-        destination = os.path.join(destination_dir,args.metafile)
-        with open(destination,'w+') as mf:
-            logger.info(f"Copying {rsrc['id']} data to {destination}")
-            mf.write(yaml.dump(rsrc))
-    except Exception as e:
-        logger.error(rsrc)
-        logger.error(e)
-        return
-
-    if args.commit and "URL" in rsrc:
-        if isrepository(rsrc["URL"]):
-            gitdir = get_resource_location(rsrc,config)
-            os.system(f"git -C {gitdir} pull")
-            os.system(f"git -C {gitdir} add {args.metafile}")
-            os.system(f"git -C {gitdir} commit -am 'Auto-update {args.metafile}'")
-            os.system(f"git -C {gitdir} push")
-
-def git_item(rsrc,args,config=None):
-    if "URL" in rsrc and isrepository(rsrc["URL"]):
-        gitdir = get_resource_location(rsrc,config)
-        if args.dry:
-            logger.info(f"git -C {gitdir} {' '.join(args.gitcommands)}")
-        else:
-            os.system(f"git -C {gitdir} {' '.join(args.gitcommands)}")
-    
-def copy_resource(rsrc,args,config, accum):
-    source_dir = get_resource_location(rsrc,config)
-    destination = os.path.join(args.DIRECTORY,rsrc['id']+'/')
-    if args.clean and os.path.isdir(destination):
-        logger.info(f"removing {destination}")
-        shutil.rmtree(destination)
-    
-    rules = set()
-    if config.copy.filters:
-        logger.debug("config.copy.filters = {}".format(config.copy.filters))
-        for filter in config.copy.filters:
-            if (r:=_apply_filter(rsrc,filter)):
-                rules = rules|r
-            else:
-                print(f"Excluding {rsrc['id']}.")
-                return
-    logger.debug("Copy: Rules={}".format(rules))
-    
-    logger.info(f"Copying {rsrc['id']} data from {source_dir} to {destination}")
-    if not args.dry:
-        copy_tree(source_dir, destination, destination, rules)
-
-    if config.copy.destination_gitignore:
-        _append_gitignore(rsrc['id']+'/', args.DIRECTORY)
+def pass_item(item, args, config, accum:dict)->dict:
+    return accum
 
 def _apply_filter(rsrc:dict,filter:dict)->set:
     if "match" in filter:
@@ -105,142 +34,146 @@ def _apply_filter(rsrc:dict,filter:dict)->set:
             else:
                 return False
     return set(filter["rules"]) if "rules" in filter else True
-        
 
-def isrepository(url_string):
-    url_object = urllib.parse.urlparse(url_string)
-    url_path = Path(url_object.path)
-    if len(url_path.parts)==3:
-        return True
-    else:
-        return False
+def apply_field_filters(resource:ElementTree,filters:dict)->bool:
+    matches = []
+    for field,fltrs in filters.items():
+        j_matches = []
+        if ":" in field:
+            elem_name, attrib = field.split(":")
+            for fltr in fltrs:
+                fltr_j_matched = False
+                for el in resource.findall(elem_name):
+                    if fltr.search(el.attrib[attrib]):
+                        fltr_j_matched = True
+                        break
+                j_matches.append(fltr_j_matched)
+        matches.append(all(j_matches))
+    return all(matches)
 
-def clone_resources(rsrc,args,config=None,accum=None)->None:
-    if "URL" in rsrc:
-        if isrepository(rsrc['URL']):
-            destination = get_resource_location(rsrc,config)
-            os.system(f"git clone {rsrc['URL']} {destination}")
-
-def rename_resource(rsrc, args, accum):
-    raise Exception("Unimplemented")
-
-
-def show_resource(rsrc, args, config, accum):
-    if _apply_filter(rsrc, {"match": {"id":args.REGEX}}):
-        print(yaml.dump(rsrc))
-        # if "URL" in rsrc and isrepository(rsrc["URL"]):
-        #     args.gitcommands = ["status"]
-        #     args.dry = False
-        #     git_item(rsrc,args,config)
 
 def main()->int:
-    parser = argparse.ArgumentParser(prog='aurore')
-    parser.add_argument("-D","--datafile", nargs="+", action="extend")
-    parser.add_argument("-F","--filter")
-    parser.add_argument("-v","--verbose", action="count", default=0)
+    parser = argparse.ArgumentParser(prog='aurore', description="Description text.")
+    # parser.add_argument("-C","--category-file",  nargs="?",  action="append")
+    parser.add_argument("-D","--database-file",  nargs="?",  default=".aurore/aurore.db.xml")
+    # parser.add_argument("-I","--include-item", nargs="?", action="append")
+    # parser.add_argument("-E","--exclude",nargs="*", action="extend")
+    parser.add_argument("-B","--base-uri", default="")
+    parser.add_argument("-d","--defaults",
+        help="Specify a default yaml file.",
+        nargs="?",
+        action="append"
+    )
+    parser.add_argument("-v","--verbose",
+        help="Generate verbose logging output.",
+        action="count", 
+        default=0
+    )
     parser.add_argument("-q","--quiet", action="store_true")
-    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    parser.add_argument("--version",
+        help="Output version information and exit.",
+        action="store_true")
 
     subparsers = parser.add_subparsers(title='subcommands') #,description='list of subcommands',help='additional help')
     
-    #-Clone-----------------------------------------------------------
-    clone_parser = subparsers.add_parser('clone',help='clone repositories')
-    clone_parser.add_argument('datafile')
-    clone_parser.set_defaults(func=clone_resources)
-    
-    #-Git-------------------------------------------------------------
-    git_parser = subparsers.add_parser("git", help="interface to git")
-    git_parser.add_argument("datafile")
-    git_parser.add_argument("gitcommands",nargs=argparse.REMAINDER)
-    git_parser.add_argument("--dry",action="store_true")
-    git_parser.set_defaults(func=git_item)
+    #-Post-------------------------------------------------------------
+    post_parser = subparsers.add_parser("post", help="create new entity")
+    post_parser.add_argument("type")
+    post_parser.add_argument("location", nargs="?", default="$$lid/metadata.xml")
+    post_parser.set_defaults(initfunc=post_init)
+    post_parser.set_defaults(func=None)
+    post_parser.set_defaults(closefunc=post_close)
 
-    #-Update----------------------------------------------------------
-    update_parser= subparsers.add_parser('update',
-                        help='update resource metadata files.')
-    update_parser.add_argument('metafile')
-    update_parser.add_argument('-c','--commit',action='store_true')
-    update_parser.set_defaults(func=update_src_metadata)
-        
-    #-Report----------------------------------------------------------
-    report_parser= subparsers.add_parser('report',
-                        help='report resource metadata files.')
-    report_parser.add_argument('template')
-    # report_parser.add_argument("-D","--datafile", nargs="+", action="extend")
-    report_parser.add_argument('--title')
-    report_parser.add_argument('-d','--template_data')
-    report_parser.set_defaults(init=init_report)
-    # report_parser.set_defaults(initfunc=report_header_std)
+    #-Get-------------------------------------------------------------
+    get_parser = subparsers.add_parser("get", help="retrieve an entity")
+    get_parser.add_argument("item-selectors", nargs="*", default=["*"])
+    get_parser.set_defaults(initfunc=get_init)
+    get_parser.set_defaults(func=get_item)
+    get_parser.set_defaults(closefunc=get_close)
 
-    #-Copy------------------------------------------------------------
-    copy_parser = subparsers.add_parser('copy',
-                            help='copy resource files to DIRECTORY')
-    # copy_parser.add_argument("datafile")
-    copy_parser.add_argument("DIRECTORY")
-    copy_parser.add_argument("--clean",action="store_true")
-    copy_parser.add_argument("--dry", action="store_true")
-    # copy_parser.add_argument("-F","--filter")
-    copy_parser.add_argument("-R","--rule")
-    copy_parser.set_defaults(func=copy_resource)
-
-    #-Show------------------------------------------------------------
-    show_parser = subparsers.add_parser("show",help="show resources with id matching REGEX")
-    show_parser.add_argument("datafile")
-    show_parser.add_argument("REGEX")
-    show_parser.set_defaults(func=show_resource)
-
-    #-Rename----------------------------------------------------------
-    rename_parser = subparsers.add_parser(
-                        'rename',
-                        help='rename resource files to destination_dir')
-    rename_parser.add_argument("datafile")
-    rename_parser.add_argument("destination_dir")
-    rename_parser.add_argument("--clean",action="store_true")
-    rename_parser.set_defaults(func=rename_resource)
-
-    # generate_git_API(subparsers)
 
     #-----------------------------------------------------------------
     # Main
     #-----------------------------------------------------------------
     args = parser.parse_args()
-    logging.basicConfig(level=levels[args.verbose])
-    if args.quiet: logger.setLevel(levels[0])
+    
+    #-Logging-----------------------------------------------------------
+    logger = logging.getLogger("aurore")
+    levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
+    levelNames = ["ERROR", "WARN", "INFO", "DEBUG"]
+    logger.setLevel(levels[
+        0 if args.quiet else min(args.verbose,3) if args.verbose else 0
+        ])
+    try:
+        import coloredlogs
+        coloredlogs.install(level=levelNames[
+            0 if args.quiet else min(args.verbose,3) if args.verbose else 0
+            ])
+    except:
+        pass
 
-    if isinstance(args.datafile,list):
-        db = {"references": []}
-        for file in args.datafile:
-            logger.debug(f"...{file}")
-            with open(file,"r") as f:
-                newdata = yaml.load(f,Loader=yaml.Loader)
-            db["references"] = list_merge(newdata["references"], db["references"], test_item_by_key("id"))
+    if args.version:
+        print(__version__)
+        exit(0)
+
+    #-Config----------------------------------------------------------
+    cfg = config.load_config()
+
+    #-Main-----------------------------------------------------------
+
+    accum = {}
+    if args.base_uri:
+        pass
     else:
-        with open(args.datafile,"r") as f:
-            db = yaml.load(f,Loader=yaml.Loader)
+        args.base_uri = cfg["base_uri"]
+    
+    logger.info(f"{args}")
 
-    if "filter" in args:
-        with open(args.filter,"r") as f:
-            config.copy.filters.extend(yaml.load(f,Loader=yaml.Loader)["filters"])
-        config.filters.extend(config.copy.filters[-1])
+    
+    tree = ElementTree.parse(args.database_file)
+    root = tree.getroot()
+    items = root.find("items")
+    category_schemes = tree.findall(".//category-scheme")
+    if not args.base_uri and "base" in items.attrib:
+        args.base_uri = root.find("items").attrib["base"]
+    
+    if "category_file" in args and args.category_file:
+        categories = ElementTree.parse(args.category_file[0])
+        category_schemes.append(categories.findall("category-scheme"))
 
-    if "init" in args:
-        args.initfunc, args.func, args.closefunc = args.init(args,config)
+    setattr(args, "category_schemes", category_schemes)
+    logger.info(f"category schemes: {category_schemes}")
+
+    FILTERS = {}
 
     #-------------------------------------------------------------------
     if "initfunc" in args:
-        accum = args.initfunc(args,config)
+        accum = args.initfunc(args,cfg)
     else:
         accum = {}
     
+    if args.func:
+        for item in items:
+            if "src" in item.attrib:
+                resource_path = norm_join(args.base_uri, item.attrib["src"])
+                logger.info(f"Resource path: {resource_path}")
+                resource = resolve_uri(resource_path)
+            else:
+                resource = item
+            
+            if apply_field_filters(resource,FILTERS):
+                logger.info("Entering {}".format(item.attrib["id"]))
+                logger.debug(f"Item: {item}")
+                key = ElementTree.Element("str")
+                key.attrib.update({"key": "id"})
+                key.text = item.attrib["id"]
+                resource.insert(0, key)
+                accum = args.func(resource, args, cfg, accum)
 
-    for resource in db['references']:
-        logger.info("Entering {}".format(resource["id"]))
-        accum = args.func(resource, args, config, accum)
-    
+
     if "closefunc" in args:
-        args.closefunc(args, config, accum)
+        args.closefunc(args, cfg, accum)
     
     return 0
-
 
 if __name__ == "__main__": main()

@@ -1,0 +1,49 @@
+csl-to-atom:
+  abstract/description
+  archive/draft-home
+  \(collection-title\)/category: [$1]
+
+
+
+feeds:
+  # local file
+- name: qfem
+  id: https://github.com/NHERI-SimCenter/quoFEM/examples/qfem.atom
+  recipe: https://github.com/NHERI-SimCenter/quoFEM/examples/index.yaml
+
+
+feed config:
+  # hosted file; pulled by aurore and used to aggregate rss data
+  # Entries are defined by there presence here
+  qfem-rc:
+    id: https://github.com/NHERI-SimCenter/quoFEM/examples/qfem.atom
+    entries: # required
+      qfem-0001: gh://github.com/NHERI-SimCenter/quoFEM/examples/qfem-0001/qfem-0001.yaml
+      qfem-0002: gh://github.com/NHERI-SimCenter/quoFEM/examples/qfem-0001/qfem-0001.yaml
+      qfem-0003: gh://github.com/NHERI-SimCenter/quoFEM/examples/qfem-0001/entryrc.atom
+      qfem-0004: gh://github.com/NHERI-SimCenter/quoFEM/examples/qfem-0001/entryrc.atom
+      qfem-0005: gh://github.com/NHERI-SimCenter/quoFEM/examples/qfem-0001/entryrc.atom
+      qfem-0006: gh://github.com/NHERI-SimCenter/quoFEM/examples/qfem-0001/entryrc.atom
+      qfem-0007: gh://github.com/NHERI-SimCenter/quoFEM/examples/qfem-0001/entryrc.atom
+      
+    entry-schema: # required; these fields must show up in the resulting atom entry
+      properties:
+        id: string
+        title: string
+        image: string
+        description: string
+        draft-home: string
+        draft-local: string
+        system: string
+        link: string
+        categories: [{term: string}]
+      required: [id, title, description]
+
+    entry-recipe: # optional, applied to all entries
+
+
+categories:
+  prog_lang: 
+    - python: ~
+    - tcl: ~
+  

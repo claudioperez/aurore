@@ -1,0 +1,118 @@
+cmd-types:
+  (1): <db> -> <db-cache>
+  (2): <db>:<actions> -> <db>
+  (3): <db>:<item-scheme> -> <db>
+  (4): <db>:<db-cache> -> <db>
+  (4): <db-cache>:<fmt-opts> -> <output>...
+
+<item-property>:
+  keys: ~
+
+<f-field>:
+  ~:
+    /:
+
+    %: descend vertically
+    %.<propery>: get item property specified by <property>
+    %/: descend by index/key
+    %k: keys
+    %c: category
+    %t: title
+    %i: id
+
+    @: move horizontally
+    @.<attrib>: get element attribute specified by <attrib>
+    @a: get resolved anchor path
+    @p: source path
+    @s: data scheme
+
+
+  description: ~
+
+  examples:
+    - %/t # return item title, equivalent to %i/title
+    - %./title@src
+
+<fragid>: |
+  identifies a part of a given file. Implicitly begins with #.
+
+<db>: ~
+
+<field-selector>:
+  synopsis: [%|#|*:]/<field-selector>
+  description: ~
+
+<pattern>:
+  description: |
+    - Comma-separated validators must be of same type.
+  grammar: GLOB
+
+<item-selector>:
+  grammar: |
+    [%<f-field-selector>=]<pattern>
+
+  examples:
+    - %/api/cmd/path
+    - '%i=bknd*' '%/api/cmd/path=*/performUQ/*'
+  description: |
+    include filter
+
+sub-commands:
+  copy:
+    - --clean --dry
+  get:
+    - get -i [<item-selector>...] -- [<item-filters>]
+  add:
+    ~: <item-type> <anchor-file> [-m <meta-file>[#<fragid>]]
+    <fragid>: identifies a container in <meta-file> 
+    examples:
+      - add assm README.md -m meta.xml#//items
+    description: | 
+      by default 
+  list:
+    ~: [<options>] <[type]-selector>.. -- [<f-field>...]
+    args:
+      <object-type>: [--items|templates|categories|item-types]
+      <format>:      [--format=table|full]
+
+    examples:
+      - rendre list %c/model=frame -- %i %t
+
+      - rendre list --items # list fields available for items
+      - rendre list /bknd/ -- %i %t %.title %i,t
+
+
+      - rendre list -s ' ' %c:wind-event -- %i 
+
+
+      - list --categories # print possible fields for categories
+      - list -- %i %t %c/workflow
+      - list --format 
+  set:
+    ~: <item-selector> <field-selector>[=<value>]
+    examples:
+      - set /bknd/ '%t=New Title'
+      - set 'bknd*' %c/workflow-module=createBIM
+      - set 'bknd*' %f/
+
+    description: |
+      If not provided, <item-selector> defaults to %i.
+  pull:
+    ~: [<options>] <cache-like>...
+    examples:
+      - aurore pull metadata-cache.json
+
+  init(1):
+    ~: init <item-type> -- [<field-selector>=<value>...]
+
+  print(2):
+    ~: print [<options>] <template> [<item-selector>...]
+
+  pop:
+    ~: pop <item-selector> <meta-file>
+    examples:
+      - pop bknd-0001 -w ./meta.xml
+    description: |
+      opposite of pull; removes items identified by <item-selector> 
+      from <db>, replacing it with an empty element with a `src`
+      attribute pointing to <meta-file>.

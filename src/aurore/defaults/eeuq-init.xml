@@ -1,0 +1,11 @@
+
+    <map id="{ rsrc['lid'] }" base="$SIMCENTER_DEV/EE-UQ/examples/{ rsrc['lid'] }" >
+      <str key="title" src="README.rst#.//title" />
+      <set key="docs"> <!-- src="README.rst" proc="aurore.find_dependencies" -->
+        <str>README.rst</str>
+        <set unpack="update"  src="README.rst" proc="aurore.find_dependencies" />
+      </set>
+      <str  key="summary">{ rsrc["description"] }</str>
+      <str  key="logo" src="README.rst#.//image/@uri" />
+      <date key="published" >{ now }</date>
+    </map>
