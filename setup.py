@@ -40,8 +40,9 @@ setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
-        "coloredlogs",
+        "docutils",
+        # "coloredlogs",
         "pyyaml",
-        "rendre"
+        #"rendre"
     ]
 )
