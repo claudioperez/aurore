@@ -3,7 +3,7 @@ from collections import namedtuple
 from collections.abc import Sequence
 from urllib.parse import urlparse
 import ipaddress
-import markdown
+# import markdown
 
 from aurore import utils#, theme, plugins
 from aurore.config.base import Config, ValidationError
@@ -562,7 +562,8 @@ class MarkdownExtensions(OptionallyRequired):
 
         # Confirm that Markdown considers extensions to be valid
         try:
-            markdown.Markdown(extensions=extensions, extension_configs=self.configdata)
+            pass
+            # markdown.Markdown(extensions=extensions, extension_configs=self.configdata)
         except Exception as e:
             raise ValidationError(e.args[0])
 
