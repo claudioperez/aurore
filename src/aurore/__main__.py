@@ -112,10 +112,6 @@ def main()->int:
     except:
         pass
 
-    # levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
-    # logging.basicConfig(level=levels[args.verbose])
-    # if args.quiet: logger.setLevel(levels[0])
-
     if args.version:
         print(__version__)
         exit(0)
@@ -130,10 +126,9 @@ def main()->int:
         pass
     else:
         args.base_uri = cfg["base_uri"]
-    logger.info(f"args: {args}")
+    
+    logger.info(f"{args}")
 
-    # if args.database_file:
-    #     database_file = args.database_file[0]
     
     tree = ElementTree.parse(args.database_file)
     root = tree.getroot()
@@ -150,19 +145,6 @@ def main()->int:
     logger.info(f"category schemes: {category_schemes}")
 
     FILTERS = {}
-    # if args.exclude:
-    #     for fltr in args.exclude:
-    #         if ":" in fltr:
-    #             field, pattern = fltr.rsplit(":",1)
-    #         else:
-    #             pattern = fltr 
-    #             field = "item:id"
-
-    #         if field in FILTERS:
-    #             FILTERS[field].extend(re.compile(pattern))
-    #         else:
-    #             FILTERS.update({field: [re.compile(pattern)]})
-    logger.info(f"filters: {FILTERS}")
 
     #-------------------------------------------------------------------
     if "initfunc" in args:
