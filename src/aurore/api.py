@@ -35,7 +35,7 @@ def post_init(args, config)->dict:
     with open(config.init_type[args.type], "r") as f:
         lines = f.readlines()
 
-    for i, ln in enumerate(lines): 
+    for i, ln in enumerate(lines):
         lines[i] = ln.replace("$$lid",lid)
         lines[i] = ln.replace("$$published",datetime.now(timezone.utc).astimezone().isoformat())
     accum =  {
@@ -49,7 +49,7 @@ def post_close(args, config, accum):
     data = {}
     for i, ipt in enumerate(accum["base"].findall("input")):
         val = input(ipt.attrib["key"]+": ")
-        try: 
+        try:
             val = eval(val)
         except:
             pass
@@ -62,7 +62,7 @@ def post_close(args, config, accum):
         destination = args.location
     with open(destination,"w+") as f:
         f.writelines(build_template(accum["lines"], data))
- 
+
 def build_template(template:list, data:dict):
     for k,v in data.items():
         for j,ln in enumerate(template):
@@ -84,11 +84,20 @@ def get_init(args,config):
     return accum
 
 def get_item(rsrc, args:object, config:object, accum:dict)->dict:
-    raw_item = xml_to_map(rsrc, args.base_uri)
+    if "rel_path" in args:
+        if args.rel_path:
+            relpath = os.path.expandvars(args.rel_path)
+        else:
+            relpath=os.getcwd()
+    else:
+        relpath = None
+
+    raw_item = xml_to_map(rsrc, args.base_uri, relpath=relpath)
     if "base" in rsrc.attrib:
         base = rsrc.attrib["base"]
     else:
         base = args.base_uri
+
     item = categorize(accum["categories"], raw_item, base)
     accum['items'].update({rsrc.attrib["id"]: item})
     return accum

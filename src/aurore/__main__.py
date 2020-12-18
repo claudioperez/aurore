@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#/usr/bin/env python
 
 
 import os
@@ -75,7 +75,7 @@ def main()->int:
         action="store_true")
 
     subparsers = parser.add_subparsers(title='subcommands') #,description='list of subcommands',help='additional help')
-    
+
     #-Post-------------------------------------------------------------
     post_parser = subparsers.add_parser("post", help="create new entity")
     post_parser.add_argument("type")
@@ -86,6 +86,7 @@ def main()->int:
 
     #-Get-------------------------------------------------------------
     get_parser = subparsers.add_parser("get", help="retrieve an entity")
+    get_parser.add_argument("-p","--rel-path")
     get_parser.add_argument("item-selectors", nargs="*", default=["*"])
     get_parser.set_defaults(initfunc=get_init)
     get_parser.set_defaults(func=get_item)
@@ -96,7 +97,7 @@ def main()->int:
     # Main
     #-----------------------------------------------------------------
     args = parser.parse_args()
-    
+
     #-Logging-----------------------------------------------------------
     logger = logging.getLogger("aurore")
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
