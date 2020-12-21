@@ -2,7 +2,7 @@ import os
 import subprocess
 import logging
 import xml.etree.ElementTree as ElementTree
-from functools import reduce
+from datetime import datetime
 
 from .git_utils import sha1
 from .uri_utils import resolve_uri
@@ -147,6 +147,16 @@ def cli_usage(src,base_uri):
 
     return text, state
 
+def proc_date(elem, base, context=None, **kwds):
+    if "-" not in elem.text:
+        if len(elem.text)==8:
+            date = f"{date[:4]}-{date[4:6]}-{date[6:]}"
+        else:
+            logger.error(f"Unrecognized date: {elem.text}")
+            return elem.text, None
+    date = datetime.fromisoformat(elem.text)
+    return date.astimezone().isoformat(), None
+
 def proc_var(elem, base, context=None, **kwds):
     if context is None:
         context = {}
@@ -194,6 +204,7 @@ proc = {
     "set": proc_set,
     "map": proc_map,
     "path": proc_path,
+    "date": proc_date,
     "item": lambda el,_,**__: (el.text, None),
     "bool": lambda el,_,**__: (bool(el.text), None),
     "eval": proc_eval,
