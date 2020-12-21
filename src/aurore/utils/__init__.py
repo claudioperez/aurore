@@ -35,7 +35,7 @@ def norm_join(base,path):
         return os.path.join(full_base,full_path)
     else:
         return full_path
-    pass 
+
 
 def yaml_load(source, loader=yaml.Loader):
     """
