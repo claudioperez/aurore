@@ -1,21 +1,12 @@
 import re
 import fnmatch
 import logging
-import jsonpointer
+
+from . import jsonpointer
 
 from aurore.utils.treeutils import iterate_leaves
 
 logger = logging.getLogger("aurore.selectors")
-
-# def iterate_leaves(item):
-#     if isinstance(item,(str,float,int)):
-#         yield item
-#     elif isinstance(item,dict):
-#         for leaf in item.values():
-#             yield from iterate_leaves(leaf)
-#     elif isinstance(item,(tuple,list)):
-#         for leaf in item:
-#             yield from iterate_leaves(leaf)
 
 
 class Pattern:
