@@ -3,6 +3,7 @@
 
 import os
 import re
+import sys
 import argparse
 import distutils, shutil, logging
 from distutils import dir_util
@@ -66,7 +67,7 @@ def main()->int:
     )
     parser.add_argument("-v","--verbose",
         help="Generate verbose logging output.",
-        action="count", 
+        action="count",
         default=0
     )
     parser.add_argument("-q","--quiet", action="store_true")
@@ -127,17 +128,23 @@ def main()->int:
         pass
     else:
         args.base_uri = cfg["base_uri"]
-    
+
     logger.info(f"{args}")
 
-    
-    tree = ElementTree.parse(args.database_file)
+    if args.database_file =="-":
+        # logger.debug(f"STDIN:\n{sys.stdin.read()}")
+        # tree = ElementTree.ElementTree(ElementTree.fromstring(sys.stdin.read()))
+        tree = ElementTree.parse(sys.stdin)
+    else:
+        tree = ElementTree.parse(args.database_file)
     root = tree.getroot()
     items = root.find("items")
-    category_schemes = tree.findall(".//category-scheme")
+    if items is None:
+        items = root
     if not args.base_uri and "base" in items.attrib:
         args.base_uri = root.find("items").attrib["base"]
-    
+
+    category_schemes = tree.findall(".//category-scheme")
     if "category_file" in args and args.category_file:
         categories = ElementTree.parse(args.category_file[0])
         category_schemes.append(categories.findall("category-scheme"))
