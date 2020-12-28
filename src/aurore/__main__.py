@@ -159,16 +159,17 @@ def main()->int:
         accum = args.initfunc(args,cfg)
     else:
         accum = {}
-    
+
     if args.func:
         for item in items:
             if "src" in item.attrib:
                 resource_path = norm_join(args.base_uri, item.attrib["src"])
                 logger.info(f"Resource path: {resource_path}")
                 resource = resolve_uri(resource_path)
+                resource.attrib.update({"id": item.attrib["id"]})
             else:
                 resource = item
-            
+
             if apply_field_filters(resource,FILTERS):
                 logger.info("Entering {}".format(item.attrib["id"]))
                 logger.debug(f"Item: {item}")
