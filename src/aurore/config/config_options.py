@@ -81,13 +81,15 @@ class ConfigItems(BaseConfigOption):
     def run_validation(self, value):
         if value is None:
             if self.required:
-                raise ValidationError("Required configuration not provided.")
+                pass
+                #raise ValidationError("Required configuration not provided.")
             else:
                 return ()
 
         if not isinstance(value, Sequence):
-            raise ValidationError('Expected a sequence of mappings, but a %s '
-                                  'was given.' % type(value))
+            pass
+            # raise ValidationError('Expected a sequence of mappings, but a %s '
+            #                       'was given.' % type(value))
 
         return [self.item_config.validate(item) for item in value]
 
@@ -125,7 +127,8 @@ class OptionallyRequired(BaseConfigOption):
             elif not self.required:
                 return
             elif self.required:
-                raise ValidationError("Required configuration not provided.")
+                pass
+                # raise ValidationError("Required configuration not provided.")
 
         return self.run_validation(value)
 
