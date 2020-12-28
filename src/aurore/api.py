@@ -88,17 +88,21 @@ def get_item(rsrc, args:object, config:object, accum:dict)->dict:
         if args.rel_path:
             relpath = os.path.expandvars(args.rel_path)
         else:
-            relpath=os.getcwd()
+            # relpath=os.getcwd()
+            relpath = None
     else:
         relpath = None
+    logger.debug(f"Relative path: {relpath}")
 
     raw_item = xml_to_map(rsrc, args.base_uri, relpath=relpath)
+    logger.debug(raw_item)
+
     if "base" in rsrc.attrib:
         base = rsrc.attrib["base"]
     else:
         base = args.base_uri
 
-    item = categorize(accum["categories"], raw_item, base)
+    item = categorize(accum["categories"], raw_item, base) if accum["categories"] else raw_item
     accum['items'].update({rsrc.attrib["id"]: item})
     return accum
 
@@ -117,6 +121,7 @@ def get_close(args, config, accum):
 
 
 def categorize(categories, map_item, base_uri):
+    logger.debug(map_item)
     map_item["categories"] = {}
 
     for category in categories:

@@ -33,7 +33,7 @@ def test_pull_content(elem: ElementTree)->bool:
     return "src" in elem.attrib
 
 
-def pull_content(elem, base, verbose=True):
+def pull_content(elem, base, verbose=True)->ElementTree:
     if "base" in elem.attrib:
         base = elem.attrib["base"]
 
@@ -47,7 +47,10 @@ def pull_content(elem, base, verbose=True):
         logger.info(f"Resolving {src}, {base}")
         content = resolve_uri(src, base)
         state = None
-    elem.text = content
+    try:
+        elem.text = content.text
+    except:
+        elem.text = content
     logger.info(f"Pulled content: {content}")
     return elem, {"src": state}
 
@@ -193,6 +196,11 @@ def post_path(path, base=None, relpath=None):
         path = os.path.relpath(os.path.normpath(path), os.path.abspath(relpath))
     return path
 
+# def proc_str(el, base, context, **kwds):
+#     try:
+#         return str(el.text.text)
+#     except:
+#         return str(el.text)
 
 proc = {
     "var": proc_var,
