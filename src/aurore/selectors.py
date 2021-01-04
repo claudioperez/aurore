@@ -1,6 +1,7 @@
 import re
 import fnmatch
 import logging
+from pathlib import Path
 
 from . import jsonpointer
 
@@ -20,6 +21,25 @@ class Pattern:
         else:
             return self.pattern == field
 
+class PathBuilder:
+    """
+    Examples
+    --------
+    >>> item = {'id': 'xyz-123'}
+    >>> PathBuilder('%i/inter/file.rst').resolve(item)
+    Path('xyz-123/inter/file.rst')
+    """
+    def __init__(self,template: str):
+        self.template = template.split("/") 
+        # self.pointers = [
+        #     Pointer(k) for k in self.template if "%" in k
+        # ]
+    
+    def resolve(self,item):
+        return "/".join([
+            Pointer(s).resolve(item) if "%" in s else s for s in self.template
+        ])
+
 
 class Pointer:
     token_keys = {
@@ -27,6 +47,10 @@ class Pointer:
         "t": lambda i,_: i["title"],
         "i": lambda i,_: i["id"],
         ".": lambda i,_: i,
+    }
+    attrib_tokens = {
+        "s": lambda tree: tree.attrib["src"], 
+        "b": lambda tree: tree.attrib["base"]
     }
 
     def __init__(self, pointer:str,recurse=False,maxlen:int=30,truncate:bool=False,bracket_as_slice=False):
@@ -78,6 +102,12 @@ class TrueSelector:
     def validate(self, item)->bool:
         return True
 
+class FalseSelector:
+    def __init__(self, *args, **kwds):
+        pass 
+    def validate(self, item)->bool:
+        return False
+
 class Selector:
     def __init__(self,selector:str):
 
@@ -112,12 +142,21 @@ def check_includes(args, item):
         inclusive_selectors = [Selector(i) for i in args.include_item]
     else:
         inclusive_selectors = [TrueSelector()]
+    
     if args.include_exclusive:
         exclusive_selectors = [Selector(i) for i in args.include_exclusive]
     else:
         exclusive_selectors = [TrueSelector()]
+    
+    if args.exclude_item:
+        exclude_selectors = [Selector(i) for i in args.exclude_item]
+    else:
+        exclude_selectors = [FalseSelector()]
 
+    
     return any(selector.validate(item) for selector in inclusive_selectors) \
            and \
-           all(selector.validate(item) for selector in exclusive_selectors)
+           all(selector.validate(item) for selector in exclusive_selectors) \
+           and \
+           all(not selector.validate(item) for selector in exclude_selectors)
 
