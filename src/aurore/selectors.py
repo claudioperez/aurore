@@ -1,4 +1,4 @@
-import re
+import re, os
 import fnmatch
 import logging
 from pathlib import Path
@@ -25,19 +25,28 @@ class PathBuilder:
     """
     Examples
     --------
-    >>> item = {'id': 'xyz-123'}
+    >>> item = {'id': 'xyz-123', 'a': {'b': 'c'}}
     >>> PathBuilder('%i/inter/file.rst').resolve(item)
     Path('xyz-123/inter/file.rst')
+    >>> PathBuilder('%%:id/inter/%%:a:b/file.rst').resolve(item)
+    Path('xyz-123/inter/c/file.rst')
     """
-    def __init__(self,template: str):
-        self.template = template.split("/") 
+    def __init__(self,
+        template: str,
+        delimeter: str = "/",
+        pointer_delimeter:str = ":",
+        unpack_fields:bool = False
+    ):
+        self.template = template.split(delimeter) 
+        self.pointer_delimeter = pointer_delimeter
         # self.pointers = [
         #     Pointer(k) for k in self.template if "%" in k
         # ]
     
     def resolve(self,item):
-        return "/".join([
-            Pointer(s).resolve(item) if "%" in s else s for s in self.template
+        return os.path.sep.join([
+            Pointer(s,delimeter=self.pointer_delimeter).resolve(item) 
+                if "%" in s else s for s in self.template
         ])
 
 
@@ -47,16 +56,21 @@ class Pointer:
         "t": lambda i,_: i["title"],
         "i": lambda i,_: i["id"],
         ".": lambda i,_: i,
+        "%": lambda i,_: i,
     }
     attrib_tokens = {
         "s": lambda tree: tree.attrib["src"], 
         "b": lambda tree: tree.attrib["base"]
     }
 
-    def __init__(self, pointer:str,recurse=False,maxlen:int=30,truncate:bool=False,bracket_as_slice=False):
+    def __init__(self, pointer:str,
+        recurse=False,maxlen:int=30,truncate:bool=False,
+        bracket_as_slice=False, delimeter="/"
+    ):
         self.recurse:  bool = recurse
         self.truncate: bool = truncate
         self.slice:   slice = slice(maxlen)
+        self.delimeter = delimeter
         if bracket_as_slice:
             match = re.search(r"\[(.*)\]$",pointer)
             if match:
@@ -70,7 +84,9 @@ class Pointer:
                 logger.debug(f"slice: {self.slice}")
 
         if pointer[0] == "%":
-            self.tokens = re.split("([%|/][^/]*)", pointer)[1::2]
+            self.tokens = re.split(
+                "([%|{0}][^{0}]*)".format("\\" + delimeter if delimeter in ["."] else delimeter
+            ), pointer)[1::2]
         else:
             raise Exception(
                 f"Unimplemented pattern handler for pointer: "
@@ -81,8 +97,9 @@ class Pointer:
         for token in self.tokens:
             if re.match("^%.*", token):
                 item = Pointer.token_keys[token[1]](item,None)
-            elif re.match("^/.*",token):
-                item = jsonpointer.resolve_pointer(item, token)
+            else:
+            # elif re.match("^/.*",token):
+                item = jsonpointer.resolve_pointer(item, token, delim=self.delimeter)
         return item
 
     def resolve(self,item):
@@ -121,7 +138,6 @@ class Selector:
             recurse = False
             pointer, pattern = r"%i", selector
 
-
         self.pattern = Pattern(pattern)
         self.pointer = Pointer(pointer,recurse=recurse)
         self.recurse = recurse
@@ -130,7 +146,8 @@ class Selector:
     def validate(self,item):
         if self.recurse:
             return any(
-                self.pattern.validate(val) for val in self.pointer.resolve_recursively(item)
+                self.pattern.validate(val) 
+                    for val in self.pointer.resolve_recursively(item)
             )
         else:
             return self.pattern.validate(self.pointer.resolve(item))
