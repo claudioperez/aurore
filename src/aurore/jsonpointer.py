@@ -81,7 +81,7 @@ def set_pointer(doc, pointer, value, inplace=True):
     return pointer.set(doc, value, inplace)
 
 
-def resolve_pointer(doc, pointer, default=_nothing):
+def resolve_pointer(doc, pointer, default=_nothing,delim="/"):
     """ Resolves pointer against doc and returns the referenced object
     >>> obj = {'foo': {'anArray': [ {'prop': 44}], 'another prop': {'baz': 'A string' }}, 'a%20b': 1, 'c d': 2}
     >>> resolve_pointer(obj, '') == obj
@@ -106,7 +106,7 @@ def resolve_pointer(doc, pointer, default=_nothing):
     True
     """
 
-    pointer = JsonPointer(pointer)
+    pointer = JsonPointer(pointer,delim=delim)
     return pointer.resolve(doc, default)
 
 
@@ -149,7 +149,8 @@ class JsonPointer(object):
     _RE_ARRAY_INDEX = re.compile('0|[1-9][0-9]*$')
     _RE_INVALID_ESCAPE = re.compile('(~[^01]|~$)')
 
-    def __init__(self, pointer):
+    def __init__(self, pointer, delim="/"):
+        self.delim = delim
 
         # validate escapes
         invalid_escape = self._RE_INVALID_ESCAPE.search(pointer)
@@ -157,7 +158,7 @@ class JsonPointer(object):
             raise JsonPointerException('Found invalid escape {}'.format(
                 invalid_escape.group()))
 
-        parts = pointer.split('/')
+        parts = pointer.split(delim)
         if parts.pop(0) != '':
             raise JsonPointerException('Location must start with /')
 
