@@ -1,4 +1,5 @@
 
+__version__ = "0.0.0"
 
 def load(*args,include='ccorp',include_dirs=None,**kwds):
     if include == 'ccorp':
