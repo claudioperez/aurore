@@ -19,6 +19,7 @@ cmd-types:
     %c: category
     %t: title
     %i: id
+    %b/<glob>: glob files from item@base directory
 
     @: move horizontally
     @.<attrib>: get element attribute specified by <attrib>
@@ -62,18 +63,28 @@ sub-commands:
     - --clean --dry
   get:
     - get -i [<item-selector>...] -- [<item-filters>]
+
+
+  init(1):
+    ~: init <item-type> -- [<field-selector>=<value>...]
+
+  tag: ~
+
   add:
-    ~: <item-type> <anchor-file> [-m <meta-file>[#<fragid>]]
+    ~: [<item-type>] <anchor-file> [--dry-run] [-m <meta-file>[#<fragid>]]
     <fragid>: identifies a container in <meta-file> 
     examples:
       - add assm README.md -m meta.xml#//items
-    description: | 
-      by default 
-  list:
+      - add assm -s '%.@base=./%i'
+    description: |
+      by default
+
+
+  rendre-list:
     ~: [<options>] <[type]-selector>.. -- [<f-field>...]
     args:
       <object-type>: [--items|templates|categories|item-types]
-      <format>:      [--format=table|full]
+      <format>:      [--table|yaml(long)|json|line]
 
     examples:
       - rendre list %c/model=frame -- %i %t
@@ -101,9 +112,6 @@ sub-commands:
     ~: [<options>] <cache-like>...
     examples:
       - aurore pull metadata-cache.json
-
-  init(1):
-    ~: init <item-type> -- [<field-selector>=<value>...]
 
   print(2):
     ~: print [<options>] <template> [<item-selector>...]
