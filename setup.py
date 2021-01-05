@@ -1,4 +1,4 @@
-import io
+import io, os, re
 from glob import glob
 from os.path import splitext, basename, join, dirname
 
