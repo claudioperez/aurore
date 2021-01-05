@@ -1,8 +1,9 @@
-#!/usr/bin/env python
+#/usr/bin/env python
 
 
 import os
 import re
+import sys
 import argparse
 import distutils, shutil, logging
 from distutils import dir_util
@@ -66,7 +67,7 @@ def main()->int:
     )
     parser.add_argument("-v","--verbose",
         help="Generate verbose logging output.",
-        action="count", 
+        action="count",
         default=0
     )
     parser.add_argument("-q","--quiet", action="store_true")
@@ -75,7 +76,7 @@ def main()->int:
         action="store_true")
 
     subparsers = parser.add_subparsers(title='subcommands') #,description='list of subcommands',help='additional help')
-    
+
     #-Post-------------------------------------------------------------
     post_parser = subparsers.add_parser("post", help="create new entity")
     post_parser.add_argument("type")
@@ -86,6 +87,7 @@ def main()->int:
 
     #-Get-------------------------------------------------------------
     get_parser = subparsers.add_parser("get", help="retrieve an entity")
+    get_parser.add_argument("-p","--rel-path")
     get_parser.add_argument("item-selectors", nargs="*", default=["*"])
     get_parser.set_defaults(initfunc=get_init)
     get_parser.set_defaults(func=get_item)
@@ -96,7 +98,7 @@ def main()->int:
     # Main
     #-----------------------------------------------------------------
     args = parser.parse_args()
-    
+
     #-Logging-----------------------------------------------------------
     logger = logging.getLogger("aurore")
     levels = [logging.ERROR, logging.WARN, logging.INFO, logging.DEBUG]
@@ -126,17 +128,23 @@ def main()->int:
         pass
     else:
         args.base_uri = cfg["base_uri"]
-    
+
     logger.info(f"{args}")
 
-    
-    tree = ElementTree.parse(args.database_file)
+    if args.database_file =="-":
+        # logger.debug(f"STDIN:\n{sys.stdin.read()}")
+        # tree = ElementTree.ElementTree(ElementTree.fromstring(sys.stdin.read()))
+        tree = ElementTree.parse(sys.stdin)
+    else:
+        tree = ElementTree.parse(args.database_file)
     root = tree.getroot()
     items = root.find("items")
-    category_schemes = tree.findall(".//category-scheme")
+    if items is None:
+        items = root
     if not args.base_uri and "base" in items.attrib:
         args.base_uri = root.find("items").attrib["base"]
-    
+
+    category_schemes = tree.findall(".//category-scheme")
     if "category_file" in args and args.category_file:
         categories = ElementTree.parse(args.category_file[0])
         category_schemes.append(categories.findall("category-scheme"))
@@ -151,16 +159,17 @@ def main()->int:
         accum = args.initfunc(args,cfg)
     else:
         accum = {}
-    
+
     if args.func:
         for item in items:
             if "src" in item.attrib:
                 resource_path = norm_join(args.base_uri, item.attrib["src"])
                 logger.info(f"Resource path: {resource_path}")
                 resource = resolve_uri(resource_path)
+                resource.attrib.update({"id": item.attrib["id"]})
             else:
                 resource = item
-            
+
             if apply_field_filters(resource,FILTERS):
                 logger.info("Entering {}".format(item.attrib["id"]))
                 logger.debug(f"Item: {item}")

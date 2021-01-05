@@ -16,4 +16,7 @@ A distributed document-oriented database management system.
   <dd>Suppress logging output.</dd>
 </dl>
 
+### `add`
+
+
 

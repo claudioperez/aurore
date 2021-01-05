@@ -30,13 +30,16 @@ def resolve_uri(ref:str, local_base=None)->ElementTree:
 
     if os.path.isfile(url.path):
         _, ext = os.path.splitext(url.path)
-        if ext in [".xml"]:
+        if ext in [".xml", ".html"]:
             item = ElementTree.parse(url.path)
             if url.fragment:
-                return item.find(f".//*[@id='{url.fragment}']")
+                if url.fragment[0] not in ['.', '/']:
+                    return item.find(f".//*[@id='{url.fragment}']")
+                else:
+                    return item.find(url.fragment)
             else:
                 return item
-        elif ext in [".json"]:
+        elif ext in [".json", ".ipynb"]:
             logger.info(f"Resolving URI: {ref}")
             with open(url.path,"r") as f:
                 item = json.load(f)

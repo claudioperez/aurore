@@ -7,14 +7,6 @@ commands:
 list [templates|categories|fields|items] -f/--field
 copy
 
-*templates*
-
-options:
--l/--list  list templates
-
--t/--table
--g/--gallery
-
 
 ## list
 
