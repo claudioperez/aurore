@@ -2,6 +2,7 @@ import re, os
 import fnmatch
 import logging
 from pathlib import Path
+from itertools import product
 
 from . import jsonpointer
 
@@ -43,11 +44,19 @@ class PathBuilder:
         #     Pointer(k) for k in self.template if "%" in k
         # ]
     
-    def resolve(self,item):
+    def resolve(self,item)->str:
         return os.path.sep.join([
             Pointer(s,delimeter=self.pointer_delimeter).resolve(item) 
                 if "%" in s else s for s in self.template
         ])
+    
+    def resolve_recursively(self,item):
+        components = [
+            [*Pointer(s,delimeter=self.pointer_delimeter).resolve_recursively(item)]
+              if "%" in s else [s] for s in self.template
+        ]
+        for combo in product(*components):
+            yield os.path.sep.join(combo)
 
 
 class Pointer:
