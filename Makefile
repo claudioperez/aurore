@@ -13,8 +13,8 @@ install:
 
 
 publish:
-	python setup.py sdist bdist_wheel
-	twine upload dist/*
+	python setup.py clean --all sdist bdist_wheel
+	twine upload --skip-existing dist/*
 
 	git tag -a $(VERSION) -m 'version $(VERSION)'
 	git push --tags
