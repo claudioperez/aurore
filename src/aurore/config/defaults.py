@@ -13,6 +13,8 @@ DEFAULT_SCHEMA = (
     # Reserved for internal use, stores the aurore.yml config file.
     ('config_file_path', config_options.Type(str)),
 
+    ('types', config_options.ItemTypes()),
+
     # The title to use for the documentation
     # ('site_name', config_options.Type(str, required=True)),
 
@@ -32,13 +34,13 @@ DEFAULT_SCHEMA = (
     ('theme', config_options.Theme(default='aurore')),
 
     # The directory containing the documentation markdown.
-    ('docs_dir', config_options.Dir(default='cache', exists=True)),
+    ('docs_dir', config_options.Dir(default='cache')),
 
     # The directory where the site will be built to
-    ('site_dir', config_options.SiteDir(default='.aurore')),
+    ('data_dir', config_options.DataDir(default='')),
 
-    # The address on which to serve the live reloading docs server.
-    ('dev_addr', config_options.IpAddress(default='127.0.0.1:8000')),
+    ## The address on which to serve the live reloading docs server.
+    #('dev_addr', config_options.IpAddress(default='127.0.0.1:8000')),
 
     # If `True`, use `<page_name>/index.hmtl` style files with hyperlinks to
     # the directory.If `False`, use `<page_name>.html style file with

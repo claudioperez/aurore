@@ -3,7 +3,8 @@ from collections import namedtuple
 from collections.abc import Sequence
 from urllib.parse import urlparse
 import ipaddress
-# import markdown
+
+import jinja2
 
 from aurore import utils#, theme, plugins
 from aurore.config.base import Config, ValidationError
@@ -373,10 +374,11 @@ class Dir(FilesystemObject):
 
         # Validate that the dir is not the parent dir of the config file.
         if os.path.dirname(config.config_file_path) == config[key_name]:
-            raise ValidationError(
-                ("The '{0}' should not be the parent directory of the config "
-                 "file. Use a child directory instead so that the '{0}' "
-                 "is a sibling of the config file.").format(key_name))
+            pass
+            # raise ValidationError(
+            #     ("The '{0}' should not be the parent directory of the config "
+            #      "file. Use a child directory instead so that the '{0}' "
+            #      "is a sibling of the config file.").format(key_name))
 
 
 class File(FilesystemObject):
@@ -389,35 +391,24 @@ class File(FilesystemObject):
     name = 'file'
 
 
-class SiteDir(Dir):
+class DataDir(Dir):
     """
     SiteDir Config Option
 
-    Validates the site_dir and docs_dir directories do not contain each other.
+    Validates the data_dir and docs_dir directories do not contain each other.
     """
 
     def post_validation(self, config, key_name):
 
         super().post_validation(config, key_name)
-
-        # Validate that the docs_dir and site_dir don't contain the
-        # other as this will lead to copying back and forth on each
-        # and eventually make a deep nested mess.
-
-        # if (config['docs_dir'] + os.sep).startswith(config['site_dir'].rstrip(os.sep) + os.sep):
-        #     raise ValidationError(
-        #         ("The 'docs_dir' should not be within the 'site_dir' as this "
-        #          "can mean the source files are overwritten by the output or "
-        #          "it will be deleted if --clean is passed to aurore build."
-        #          "(site_dir: '{}', docs_dir: '{}')"
-        #          ).format(config['site_dir'], config['docs_dir']))
-        # elif (config['site_dir'] + os.sep).startswith(config['docs_dir'].rstrip(os.sep) + os.sep):
-        #     raise ValidationError(
-        #         ("The 'site_dir' should not be within the 'docs_dir' as this "
-        #          "leads to the build directory being copied into itself and "
-        #          "duplicate nested files in the 'site_dir'."
-        #          "(site_dir: '{}', docs_dir: '{}')"
-        #          ).format(config['site_dir'], config['docs_dir']))
+            
+        if (config['data_dir'] + os.sep).startswith(config['docs_dir'].rstrip(os.sep) + os.sep):
+            raise ValidationError(
+                ("The 'data_dir' should not be within the 'docs_dir' as this "
+                 "leads to the build directory being copied into itself and "
+                 "duplicate nested files in the 'data_dir'."
+                 "(data_dir: '{}', docs_dir: '{}')"
+                 ).format(config['data_dir'], config['docs_dir']))
 
 
 class Theme(BaseConfigOption):
@@ -472,6 +463,44 @@ class Theme(BaseConfigOption):
         #                           format(path=theme_config['custom_dir'], name=key_name))
 
         # config[key_name] = theme.Theme(**theme_config)
+
+class ItemTypes(OptionallyRequired):
+    """
+    Types Config Option
+
+    Validate the Types config.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.file_match = utils.is_markdown_file
+
+    def run_validation(self, value):
+
+        if not isinstance(value, dict):
+            raise ValidationError(
+                "Expected a mapping, got {}".format(type(value)))
+
+        if len(value) == 0:
+            return
+
+        config_types = {type(item) for item in value.values()}
+        if config_types.issubset({str}):
+            return value
+
+        raise ValidationError("Invalid pages config. {} {}".format(
+            config_types, {str, dict}
+        ))
+
+    def post_validation(self, config, key_name):
+        if config["types"] is not None:
+            templates = {}
+            env =  jinja2.Environment(
+                loader=jinja2.FileSystemLoader(config["data_dir"])
+            )
+            for k, v in config["types"].items():
+                templates.update({k: env.get_template(v)})
+            config["types"] = templates
 
 
 class Nav(OptionallyRequired):
