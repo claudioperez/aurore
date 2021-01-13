@@ -23,7 +23,7 @@ class Config(UserDict):
     for running validation on the structure and contents.
     """
 
-    def __init__(self, schema, config_file_path=None):
+    def __init__(self, schema,config_file_path=None):
         """
         The schema is a Python dict which maps the config name to a validator.
         """
@@ -170,7 +170,7 @@ def load_config(config_file=None, **kwargs):
     Load the configuration for a given file object or name
 
     The config_file can either be a file object, string or None. If it is None
-    the default `aurore.yml` filename will loaded.
+    the default `config.yaml` filename will loaded.
 
     Extra kwargs are passed to the configuration to replace any default values
     unless they themselves are None.
@@ -185,7 +185,7 @@ def load_config(config_file=None, **kwargs):
 
     config_file = _open_config_file(config_file)
     options['config_file_path'] = getattr(config_file, 'name', '')
-
+    
     # Initialise the config with the default schema .
     from aurore import config
     cfg = Config(schema=config.DEFAULT_SCHEMA, config_file_path=options['config_file_path'])
@@ -211,9 +211,8 @@ def load_config(config_file=None, **kwargs):
         #     "Aborted with {} Configuration Errors!".format(len(errors))
         # )
     elif cfg['strict'] and len(warnings) > 0:
-        pass
-        # raise exceptions.ConfigurationError(
-        #     "Aborted with {} Configuration Warnings in 'strict' mode!".format(len(warnings))
-        # )
+        raise exceptions.ConfigurationError(
+            "Aborted with {} Configuration Warnings in 'strict' mode!".format(len(warnings))
+        )
 
     return cfg
