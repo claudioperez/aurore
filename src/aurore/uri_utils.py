@@ -21,7 +21,7 @@ def extract_uri(
     ): pass
 
 
-def resolve_uri(ref:str, local_base=None)->ElementTree:
+def resolve_uri(ref:str, local_base="")->ElementTree:
     ref = norm_join(local_base, ref)
     # if local_base:
     #     ref = os.path.join(local_base, ref)
@@ -60,9 +60,8 @@ def resolve_uri(ref:str, local_base=None)->ElementTree:
                 return resolve_fragment(document, url.fragment, "xpath")
             else:
                 return document
-
     else:
-        return
+        raise FileNotFoundError(url.path)
 
 def resolve_fragment(item, fragment, scheme):
     # if fragment[0] in ["%","@"]:
