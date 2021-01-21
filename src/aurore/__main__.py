@@ -167,6 +167,11 @@ def main()->int:
                 logger.info(f"Resource path: {resource_path}")
                 resource = resolve_uri(resource_path)
                 resource.attrib.update({"id": item.attrib["id"]})
+            
+            elif "type" in item.attrib:
+                xml_string = cfg["types"][item.attrib["type"]].render(**item.attrib)
+                resource = ElementTree.fromstring(xml_string)
+            
             else:
                 resource = item
 
