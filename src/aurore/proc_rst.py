@@ -8,7 +8,8 @@ from .utils import norm_join
 def rst_to_xml(filename):
     with open(filename,"r") as f:
         doctree = publish_doctree(f.read())
-    return ElementTree.fromstring(doctree.asdom().toxml())
+    xml_representation = doctree.asdom().toxml()
+    return ElementTree.fromstring(xml_representation)
 
 def find_dependencies(src: str, base:str)->list:
     rst_tree = rst_to_xml(
