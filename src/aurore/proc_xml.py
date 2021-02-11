@@ -58,7 +58,7 @@ def pull_content(elem, base, verbose=True)->ElementTree:
 def proc_map(elem, base, context=None, **kwds):
     if "base" in elem.attrib:
         base = elem.attrib["base"]
-    # logger.info(f"key: {elem.attrib['key'] if 'key' in elem.attrib else ''}, base: {base}")
+    logger.info(f"key: {elem.attrib['key'] if 'key' in elem.attrib else ''}, base: {base}")
     output = {}
     state = {}
     for el in elem:
@@ -166,14 +166,18 @@ def proc_var(elem, base, context=None, **kwds):
     ans = None
     for var in elem:
         ans, state = proc[var.tag](var,base,context=context,**kwds)
-
+        logger.debug(f"var ans: {ans}")
         if "id" in var.attrib:
             context.update({var.attrib["id"]: ans})
         else:
             context.update({"ans": ans})
 
-    if not ans:
+    if ans is None:
         return elem.text, None
+    if "cast" in elem.attrib:
+        logger.debug(f"ans precast: {ans}")
+        ans = post_proc[elem.attrib["cast"]](ans)
+        logger.debug(f"ans post-cast: {ans}")
     return ans, state
 
 def proc_eval(elem, base, context, **kwds):

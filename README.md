@@ -29,6 +29,8 @@ aurore [-h] [-D [DATABASE_FILE]] [-B BASE_URI] [-d [DEFAULTS]] [-v]
   <dd>Suppress logging output.</dd>
   <dt>-h, --help</dt>
   <dd>Print a brief help message.</dd>
+  <dt>-h, --help</dt>
+  <dd>Print a brief help message.</dd>
 </dl>
 
 
