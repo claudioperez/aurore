@@ -6,7 +6,8 @@ import xml.etree.ElementTree as ElementTree
 import xml.dom.minidom as minidom
 from datetime import datetime, timezone
 
-from .proc_xml import xml_to_map, proc_var, proc_elem
+
+from .proc_xml import xml_to_map, proc_var, proc_elem, post_proc
 
 logger = logging.getLogger("aurore.api")
 
@@ -128,6 +129,8 @@ def categorize(categories, map_item, base_uri):
         logger.info(f"Category base uri: {base_uri}")
         val = proc_elem(categories[category]["var"], base_uri, {"item": map_item})[0]
         if val is None: val="None"
+        if "cast" in categories[category]["var"].attrib:
+            val = post_proc[categories[category]["var"].attrib["cast"]](val)
         logger.info(f"Category value: {val}")
         assert val in categories[category]["map"], f"Key {val} not in mapping {categories[category]['map']}"
         map_item["categories"].update(
