@@ -38,18 +38,18 @@ class PathBuilder:
         pointer_delimeter:str = ":",
         unpack_fields:bool = False
     ):
-        self.template = template.split(delimeter) 
+        self.template = template.split(delimeter)
         self.pointer_delimeter = pointer_delimeter
         # self.pointers = [
         #     Pointer(k) for k in self.template if "%" in k
         # ]
-    
+
     def resolve(self,item)->str:
         return os.path.sep.join([
-            Pointer(s,delimeter=self.pointer_delimeter).resolve(item) 
+            Pointer(s,delimeter=self.pointer_delimeter).resolve(item)
                 if "%" in s else s for s in self.template
         ])
-    
+
     def resolve_recursively(self,item):
         components = [
             [*Pointer(s,delimeter=self.pointer_delimeter).resolve_recursively(item)]
@@ -68,7 +68,7 @@ class Pointer:
         "%": lambda i,_: i,
     }
     attrib_tokens = {
-        "s": lambda tree: tree.attrib["src"], 
+        "s": lambda tree: tree.attrib["src"],
         "b": lambda tree: tree.attrib["base"]
     }
 
@@ -85,7 +85,7 @@ class Pointer:
             if match:
                 slice_str = match.group(1)
                 self.slice = slice(*[
-                    {True: lambda n: None, False: int}[x == ''](x) 
+                    {True: lambda n: None, False: int}[x == ''](x)
                         for x in (slice_str.split(':') + ['', '', ''])[:3]
                 ])
                 pointer = pointer.rsplit("[",1)[0]
