@@ -32,8 +32,6 @@ aurore get [-p REL_PATH] [item-selectors [item-selectors ...]]
   <dd>Suppress logging output.</dd>
   <dt>-h, --help</dt>
   <dd>Print a brief help message.</dd>
-  <dt>-h, --help</dt>
-  <dd>Print a brief help message.</dd>
 </dl>
 
 ### `get`
