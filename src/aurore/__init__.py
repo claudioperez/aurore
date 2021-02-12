@@ -1,5 +1,5 @@
 
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 
 def load(*args,include='ccorp',include_dirs=None,**kwds):
     if include == 'ccorp':
@@ -8,7 +8,7 @@ def load(*args,include='ccorp',include_dirs=None,**kwds):
         yaml.allow_duplicate_keys = True
         yaml.include_dirs = include_dirs
         return yaml.load(*args, **kwds)
-        
+
     elif include=='ruamel':
         from .ruamel_include import YAML, yaml_include, my_compose_document
         yaml = YAML(typ='safe', pure=True)

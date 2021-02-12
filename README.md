@@ -18,6 +18,9 @@ A distributed document-oriented database management system.
 aurore [-h] [-D [DATABASE_FILE]] [-B BASE_URI] [-d [DEFAULTS]] [-v]
        [-q] [--version]
        {post,get} ...
+
+aurore get [-p REL_PATH] [item-selectors [item-selectors ...]]
+
 ```
 
 ## Options
@@ -33,6 +36,15 @@ aurore [-h] [-D [DATABASE_FILE]] [-B BASE_URI] [-d [DEFAULTS]] [-v]
   <dd>Print a brief help message.</dd>
 </dl>
 
+### `get`
+
+<dl>
+<dt>item-selectors<dt>
+<dd></dd>
+
+<dt>-p REL_PATH, --rel-path REL_PATH</dt>
+<dd>Normalize paths relative to `REL_PATH`</dd>
+</dl>
 
 
 ## Configuration
@@ -55,4 +67,5 @@ def-defaults: <defaults>
 [pypi-v-link]: https://pypi.org/project/aurore/
 
 [gh-link]: https://github.com/claudioperez/aurore/compare/0.0.2...master
-[gh-image]: https://img.shields.io/github/commits-since/claudioperez/aurore/0.0.1?style=social
+[gh-image]: https://img.shields.io/github/commits-since/claudioperez/aurore/0.0.2?style=social
+
