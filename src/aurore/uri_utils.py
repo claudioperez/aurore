@@ -21,7 +21,7 @@ def extract_uri(
     ): pass
 
 
-def resolve_uri(ref:str, local_base="")->ElementTree:
+def resolve_uri(ref:str, local_base="",fmt=None)->ElementTree:
     ref = norm_join(local_base, ref)
     # if local_base:
     #     ref = os.path.join(local_base, ref)
@@ -30,7 +30,8 @@ def resolve_uri(ref:str, local_base="")->ElementTree:
 
     if os.path.isfile(url.path):
         _, ext = os.path.splitext(url.path)
-        if ext in [".xml", ".html"]:
+        fmt = fmt if fmt else ext
+        if fmt in [".xml", ".html"]:
             item = ElementTree.parse(url.path)
             if url.fragment:
                 if url.fragment[0] not in ['.', '/']:
@@ -39,7 +40,7 @@ def resolve_uri(ref:str, local_base="")->ElementTree:
                     return item.find(url.fragment)
             else:
                 return item
-        elif ext in [".json", ".ipynb"]:
+        elif fmt in [".json", ".ipynb"]:
             logger.info(f"Resolving URI: {ref}")
             with open(url.path,"r") as f:
                 item = json.load(f)
@@ -47,14 +48,14 @@ def resolve_uri(ref:str, local_base="")->ElementTree:
                 return resolve_fragment(item, url.fragment, "jsonpointer")
             else:
                 return item
-        elif ext in ["yaml",".yaml", "yml", ".yml"]:
+        elif fmt in ["yaml",".yaml", "yml", ".yml"]:
             with open(url.path,"r") as f:
                 item = yaml.load(f, Loader=yaml.Loader)
             if url.fragment:
                 return resolve_fragment(item, url.fragment, "jsonpointer")
             else:
                 return item
-        elif ext in [".rst"]:
+        elif fmt in [".rst"]:
             document: ElementTree = proc_rst.rst_to_xml(url.path)
             if url.fragment:
                 return resolve_fragment(document, url.fragment, "xpath")
