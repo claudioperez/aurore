@@ -1,20 +1,25 @@
+#Claudio Perez
 import os
 import re
+import docutils.utils
 from docutils.core import publish_doctree
 import xml.etree.ElementTree as ElementTree
 from .utils import norm_join
 
+report_level = docutils.utils.Reporter.SEVERE_LEVEL + 1
 
 def rst_to_xml(filename):
     with open(filename,"r") as f:
-        doctree = publish_doctree(f.read())
+        doctree = publish_doctree(
+                f.read(),
+                settings_overrides={'report_level':report_level}
+                )
     xml_representation = doctree.asdom().toxml()
     return ElementTree.fromstring(xml_representation)
 
 def find_dependencies(src: str, base:str)->list:
     rst_tree = rst_to_xml(
         os.path.expandvars(
-            # os.path.join(base,src)
             norm_join(base,src)
         )
     )
@@ -35,7 +40,10 @@ def find_dependencies(src: str, base:str)->list:
 
 
 def parse_rst(text:str):
-    doctree = publish_doctree(text).asdom()
+    doctree = publish_doctree(
+            text,
+            settings_overrides={'report_level':report_level}
+            ).asdom()
 
     # Convert to etree.ElementTree since this is easier to work with than
     # xml.minidom
@@ -54,3 +62,4 @@ def parse_rst(text:str):
         for element in field.findall('field_body')]
 
     return dict(zip(field_names, field_text))
+

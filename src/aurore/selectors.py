@@ -1,3 +1,4 @@
+# Claudio Perez
 import re, os
 import fnmatch
 import logging
@@ -21,6 +22,7 @@ class Pattern:
             return fnmatch.fnmatch(field,self.pattern)
         else:
             return self.pattern == field
+
 
 class PathBuilder:
     """
@@ -96,12 +98,14 @@ class Pointer:
             self.tokens = re.split(
                 "([%|{0}][^{0}]*)".format("\\" + delimeter if delimeter in ["."] else delimeter
             ), pointer)[1::2]
+
+            logger.debug(f"tokens: {self.tokens}")
         else:
             raise Exception(
                 f"Unimplemented pattern handler for pointer: "
                 f"{pointer}"
                 )
-    
+
     def resolve_tokens(self,item):
         for token in self.tokens:
             if re.match("^%.*", token):
@@ -155,7 +159,7 @@ class Selector:
     def validate(self,item):
         if self.recurse:
             return any(
-                self.pattern.validate(val) 
+                self.pattern.validate(val)
                     for val in self.pointer.resolve_recursively(item)
             )
         else:
