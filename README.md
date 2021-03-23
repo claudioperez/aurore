@@ -47,7 +47,7 @@ aurore get [-p REL_PATH] [item-selectors [item-selectors ...]]
 
 ## Configuration
 
-### Global (`~/.local/shared/aurore/global.yaml`)
+<!-- ### Global (`~/.local/shared/aurore/global.yaml`) -->
 
 ```
 env_vars: {}

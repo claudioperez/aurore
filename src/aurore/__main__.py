@@ -54,9 +54,12 @@ def apply_field_filters(resource:ElementTree,filters:dict)->bool:
 
 
 def main()->int:
-    parser = argparse.ArgumentParser(prog='aurore', description="Description text.")
-    # parser.add_argument("-C","--category-file",  nargs="?",  action="append")
-    parser.add_argument("-D","--database-file",  nargs="?",  default=".aurore/aurore.db.xml")
+    parser = argparse.ArgumentParser(prog='aurore', description="Distributed document-oriented DBMS.")
+    parser.add_argument("-D","--database-file",
+            nargs="?",
+            default=".aurore/aurore.db.xml",
+            help="Specify a database file"
+            )
     # parser.add_argument("-I","--include-item", nargs="?", action="append")
     # parser.add_argument("-E","--exclude",nargs="*", action="extend")
     parser.add_argument("-B","--base-uri", default="")
@@ -78,7 +81,7 @@ def main()->int:
     subparsers = parser.add_subparsers(title='subcommands') #,description='list of subcommands',help='additional help')
 
     #-Post-------------------------------------------------------------
-    post_parser = subparsers.add_parser("post", help="create new entity")
+    post_parser = subparsers.add_parser("post", help="Create new entity [INCOMPLETE]")
     post_parser.add_argument("type")
     post_parser.add_argument("location", nargs="?", default="$$lid/metadata.xml")
     post_parser.set_defaults(initfunc=post_init)
@@ -86,7 +89,7 @@ def main()->int:
     post_parser.set_defaults(closefunc=post_close)
 
     #-Get-------------------------------------------------------------
-    get_parser = subparsers.add_parser("get", help="retrieve an entity")
+    get_parser = subparsers.add_parser("get", help="Retrieve data from entities")
     get_parser.add_argument("-p","--rel-path")
     get_parser.add_argument("item-selectors", nargs="*", default=["*"])
     get_parser.set_defaults(initfunc=get_init)
