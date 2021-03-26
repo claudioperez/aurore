@@ -23,7 +23,6 @@ def proc_elem(elem, base, context, relpath=None,**kwds):
     else:
         content = elem
         val, sub_state = proc[elem.tag](content, base, context=context, relpath=relpath,**kwds)
-
     return val, sub_state
 
 
@@ -214,6 +213,7 @@ proc = {
     "uri": lambda el,_,**__: (str(el.text), None),
     "lst": proc_list,
     "set": proc_set,
+    "tag": lambda el,_,**__: (bool(el.text),None),
     "map": proc_map,
     "path": proc_path,
     "date": proc_date,

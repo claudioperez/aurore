@@ -22,7 +22,7 @@ from .utils import norm_join
 from aurore import config
 
 
-__version__ = "0.0.1"
+from aurore import __version__ #= "0.0.1"
 
 def pass_item(item, args, config, accum:dict)->dict:
     return accum
@@ -152,8 +152,12 @@ def main()->int:
         categories = ElementTree.parse(args.category_file[0])
         category_schemes.append(categories.findall("category-scheme"))
 
+
     setattr(args, "category_schemes", category_schemes)
-    logger.info(f"category schemes: {category_schemes}")
+    logger.debug(f"category schemes: {category_schemes}")
+
+    tag_schemes = root.find("tag-scheme")
+    setattr(args, "tag_schemes", tag_schemes)
 
     FILTERS = {}
 

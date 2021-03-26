@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ElementTree
 import xml.dom.minidom as minidom
 from datetime import datetime, timezone
 
-
+from .uri_utils import resolve_uri
 from .proc_xml import xml_to_map, proc_var, proc_elem, post_proc
 
 logger = logging.getLogger("aurore.api")
@@ -26,7 +26,7 @@ def feed_init(args, config)->dict:
 #--------------------------------------------
 def post_init(args, config)->dict:
     if "type" in args: args.base = args.type.split("/")[0]
-    print(args.base)
+    #print(args.base)
     lids = [k for k in config.namespace].sort()
     if lids:
         _, num = lids[-1].split("-")
@@ -73,15 +73,18 @@ def build_template(template:list, data:dict):
 #--------------------------------------------
 # Get
 #--------------------------------------------
-def get_init(args,config):
 
-    accum = {"items": {}, "categories": {}}
+def get_init(args,config)->dict:
+
+    accum = {"items": {}, "categories": {}, "tags": {}}
     accum["categories"] = {
         scheme.attrib["key"]: {
             "map": xml_to_map(scheme.find("map")),
             "var": scheme.find("var")
         } for scheme in args.category_schemes
     }
+    accum["tags"] = _tag(args.tag_schemes) if args.tag_schemes else {}
+    #print(accum["tags"])
     return accum
 
 def get_item(rsrc, args:object, config:object, accum:dict)->dict:
@@ -95,7 +98,7 @@ def get_item(rsrc, args:object, config:object, accum:dict)->dict:
         relpath = None
     logger.debug(f"Relative path: {relpath}")
 
-    raw_item = xml_to_map(rsrc, args.base_uri, relpath=relpath)
+    raw_item: dict = xml_to_map(rsrc, args.base_uri, relpath=relpath)
     logger.debug(raw_item)
 
     if "base" in rsrc.attrib:
@@ -104,6 +107,7 @@ def get_item(rsrc, args:object, config:object, accum:dict)->dict:
         base = args.base_uri
 
     item = categorize(accum["categories"], raw_item, base) if accum["categories"] else raw_item
+    item = tag_item(accum["tags"], item, base) if accum["tags"] else item
     accum['items'].update({rsrc.attrib["id"]: item})
     return accum
 
@@ -120,8 +124,19 @@ def get_close(args, config, accum):
 
     print(json.dumps(output,indent=2,cls=SetEncoder))
 
+def tag_item(tags, map_item: dict, base_uri):
+    logger.debug(map_item)
+    map_item["tags"] = []
+    for tag in tags:
+        logger.info(f"Tag base uri: {base_uri}")
+        val = proc_elem(tags[tag], base_uri, {"item": map_item})[0]
+        logger.info(f"Tag value: {val}")
+        if val:
+            map_item["tags"].append(tag)
 
-def categorize(categories, map_item, base_uri):
+    return map_item
+
+def categorize(categories, map_item: dict, base_uri):
     logger.debug(map_item)
     map_item["categories"] = {}
 
@@ -133,8 +148,25 @@ def categorize(categories, map_item, base_uri):
             val = post_proc[categories[category]["var"].attrib["cast"]](val)
         logger.info(f"Category value: {val}")
         assert val in categories[category]["map"], f"Key {val} not in mapping {categories[category]['map']}"
-        map_item["categories"].update(
-            {category: val}
-            )
+        map_item["categories"].update({category: val})
 
     return map_item
+
+def _tag(tag_schemes:ElementTree, base:str="")->dict:
+    #print(f"_tag({tag_schemes.attrib['key']})")
+    a = {
+            ".".join([base, tag_schemes.attrib["key"], scheme.attrib["key"]]).strip(".") : scheme
+                for scheme in tag_schemes.findall("./tag")
+    }
+    for b in tag_schemes.findall(".//tag-scheme"):
+        if "src" in b.attrib:
+            #print(b.attrib["src"])
+            scheme = resolve_uri(b.attrib["src"])
+            #print(scheme)
+        else:
+            scheme = b
+
+        a.update(_tag(scheme,base=".".join([base,tag_schemes.attrib["key"]])))
+    #print(f"a: {a}")
+    return a
+

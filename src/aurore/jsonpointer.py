@@ -56,6 +56,7 @@ from itertools import tee
 import re
 import copy
 
+import jsonpath2
 
 _nothing = object()
 
@@ -105,9 +106,12 @@ def resolve_pointer(doc, pointer, default=_nothing,delim="/"):
     >>> resolve_pointer(obj, '/c%20d', None) == None
     True
     """
-
-    pointer = JsonPointer(pointer,delim=delim)
-    return pointer.resolve(doc, default)
+    if pointer[0] == "$":
+        val = list(map(lambda m: m.current_value, jsonpath2.path.Path.parse_str(pointer).match(doc)))
+        return val
+    else:
+        pointer = JsonPointer(pointer,delim=delim)
+        return pointer.resolve(doc, default)
 
 
 def pairwise(iterable):
