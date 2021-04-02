@@ -57,6 +57,7 @@ setup(
         "docutils",
         "coloredlogs",
         "pyyaml",
+        "jsonpath2"
         #"rendre"
     ]
 )
