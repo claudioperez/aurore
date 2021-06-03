@@ -53,13 +53,17 @@ def apply_field_filters(resource:ElementTree,filters:dict)->bool:
     return all(matches)
 
 
-def main()->int:
+def main(args:list=None)->int:
     parser = argparse.ArgumentParser(prog='aurore', description="Distributed document-oriented DBMS.")
     parser.add_argument("-D","--database-file",
             nargs="?",
             default=".aurore/aurore.db.xml",
             help="Specify a database file"
-            )
+    )
+    parser.add_argument("-C","--config-file",
+            default=".aurore/config.yml",
+            help="Specify a config file"
+    )
     # parser.add_argument("-I","--include-item", nargs="?", action="append")
     # parser.add_argument("-E","--exclude",nargs="*", action="extend")
     parser.add_argument("-B","--base-uri", default="")
@@ -100,7 +104,10 @@ def main()->int:
     #-----------------------------------------------------------------
     # Main
     #-----------------------------------------------------------------
-    args = parser.parse_args()
+    if args is None:
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args(args)
 
     #-Logging-----------------------------------------------------------
     logger = logging.getLogger("aurore")
@@ -122,7 +129,7 @@ def main()->int:
         exit(0)
 
     #-Config----------------------------------------------------------
-    cfg = config.load_config()
+    cfg = config.load_config(args.config_file)
 
     #-Main-----------------------------------------------------------
 
