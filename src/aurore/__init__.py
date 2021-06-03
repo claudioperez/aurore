@@ -18,6 +18,5 @@ def load(*args,include='ccorp',include_dirs=None,**kwds):
 
         return yaml.load(*args, **kwds)
 
-from __main__ import main
 
 
