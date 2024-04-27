@@ -9,7 +9,7 @@ from .utils import norm_join
 report_level = docutils.utils.Reporter.SEVERE_LEVEL + 1
 
 def rst_to_xml(filename):
-    with open(filename,"r") as f:
+    with open(filename,"r", encoding="utf-8") as f:
         doctree = publish_doctree(
                 f.read(),
                 settings_overrides={'report_level':report_level}
